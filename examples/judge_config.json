@@ -1,0 +1,9 @@
+{
+  "base_url": "https://your-provider.example/v1",
+  "model": "your-judge-model",
+  "api_key_env": "LITEEVAL_JUDGE_API_KEY",
+  "rubric": "判断回复是否准确完成用户要求。1=通过，0=失败。给出简短理由。",
+  "scale": "binary",
+  "pass_threshold": 1,
+  "timeout_seconds": 30
+}

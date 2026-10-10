@@ -1,0 +1,13 @@
+{
+  "type": "codex",
+  "model": "your-codex-model",
+  "timeout_seconds": 120,
+  "api_key_env": "CODEX_API_KEY",
+  "environment": {
+    "type": "workspace",
+    "seed_files": {"answer.py": "def answer():\n    return 0\n"},
+    "validation_tests": [
+      {"name": "answer_check", "command": ["python", "-c", "from answer import answer; assert answer() == 42"]}
+    ]
+  }
+}

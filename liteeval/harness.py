@@ -1,23 +1,21 @@
-"""The harness owns an Agent's interaction with its environment."""
-
+"""Agent/environment lifecycle including final-state validation before teardown."""
+import asyncio
 from typing import Protocol
-
-from .adapters import AgentAdapter
-from .core import AgentRun, EvalCase
-from .environments import EnvironmentProvider, NoEnvironment
-
+from .core import AgentAdapter,AgentRun,EvalCase
+from .environments import NoEnvironment
+from .security import safe_error
 
 class Harness(Protocol):
-    async def run(self, case: EvalCase, adapter: AgentAdapter) -> AgentRun: ...
-
+    async def run(self,case: EvalCase,adapter: AgentAdapter) -> AgentRun: ...
 
 class SimpleHarness:
-    def __init__(self, environment: EnvironmentProvider | None = None):
-        self.environment = environment or NoEnvironment()
-
-    async def run(self, case: EvalCase, adapter: AgentAdapter) -> AgentRun:
-        handle = await self.environment.create(case)
+    def __init__(self,environment=None):self.environment=environment or NoEnvironment()
+    async def run(self,case,adapter):
         try:
-            return await adapter.invoke(case)
+            await self.environment.create(case)
+            run=await adapter.invoke(case)
+            try:run.final_state=await self.environment.snapshot()
+            except Exception as exc:run.final_state={'snapshot_error':safe_error(exc)}
+            return run
         finally:
-            await self.environment.destroy(handle)
+            await asyncio.shield(self.environment.destroy())

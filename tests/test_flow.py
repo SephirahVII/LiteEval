@@ -66,7 +66,8 @@ class FlowTest(unittest.TestCase):
         asyncio.run(ExperimentRunner(self.store).run(e2["id"]))
         result = compare(self.store, e1["id"], e2["id"])
         self.assertTrue(result["comparable"])
-        self.assertEqual(result["counts"], {"improved": 2, "regressed": 0, "same": 1, "unscored": 1})
+        self.assertEqual(result["metric_pair_counts"], {"improved": 2, "regressed": 0, "same": 1, "unscored": 1})
+        self.assertEqual(result["counts"], {"improved": 1, "regressed": 0, "same": 0, "unscored": 1})
         runs = self.store.get_experiment(e1["id"])["runs"]
         self.assertEqual(len(runs), 2)
         self.assertEqual(self.store.get_run(runs[0]["id"])["trace"]["kind"], "eval")

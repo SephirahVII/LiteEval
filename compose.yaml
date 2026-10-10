@@ -1,0 +1,22 @@
+# API uses host networking so its required loopback binding is preserved.
+# Linux Docker Engine only; on Windows/macOS run the Python processes directly.
+services:
+  api:
+    build: .
+    network_mode: host
+    command: ["python", "-m", "liteeval.cli", "api"]
+    environment:
+      LITEEVAL_ADMIN_TOKEN: ${LITEEVAL_ADMIN_TOKEN:?Set a long random admin token}
+    volumes:
+      - liteeval-data:/app/data
+  worker:
+    build: .
+    network_mode: host
+    command: ["python", "-m", "liteeval.cli", "worker"]
+    environment:
+      LITEEVAL_JUDGE_API_KEY: ${LITEEVAL_JUDGE_API_KEY:-}
+      AGENT_TOKEN: ${AGENT_TOKEN:-}
+    volumes:
+      - liteeval-data:/app/data
+volumes:
+  liteeval-data:

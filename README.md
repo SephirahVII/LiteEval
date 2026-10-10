@@ -1,55 +1,73 @@
-# LiteEval local backend prototype
+# LiteEval
 
-This runnable Python implementation covers the core PRD path: **production Trace → Case → immutable Dataset snapshot → Experiment → Agent Run → Scores → paired Compare**. It has no frontend and needs Python 3.11+ with no third-party packages. SQLite stores local data.
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.2.0**，使用 Python 3.11+ 标准库、SQLite 和本地工件目录，不包含前端。
 
-## Start
+它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
-From this directory, open three terminals:
+## 当前能力
+
+| 目标 | 已实现 | 验证情况 |
+| --- | --- | --- |
+| 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环实测；Judge 用本地模拟服务验证协议，真实模型需要配置后联调 |
+| 可恢复评测服务 | Case 并发、Agent/Judge 独立重试、取消、租约心跳、崩溃接管、结果写入隔离、提交幂等、项目密钥、原始响应与工件 | 本地集成测试覆盖并发、重试、取消、恢复和鉴权 |
+| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证 | SDK、真实子进程/文件操作已验证；Codex 使用替身 CLI，Docker 尚未启动真实容器 |
+
+这是可以接入自己的 HTTP Agent 的后端 MVP。实际生产服务、真实模型质量校准和 Codex/Docker 环境验收仍需按下面文档完成。
+
+## 一键体验
 
 ```bash
-python examples/demo_agent.py v1 8766
-python -m liteeval.cli api
-python -m liteeval.cli worker
-```
-
-The API listens only on `127.0.0.1:8765`; `GET /v1/health` checks it. Use the standard library test suite:
-
-```bash
+python examples/run_demo.py
 python -m unittest discover -s tests -v
 ```
 
-To create an evaluation with curl (IDs returned by each request go into subsequent bodies):
+Demo 自动启动本地 API 和两个示例 Agent，执行 Trace 转 Case、批量导入、实验与比较，然后关闭服务。预期输出：v1 通过率 0.5，v2 通过率 1.0，1 个 Case 改善、1 个不变。完整结果写入 `data/demo/report.json`。
+
+## 启动常驻服务
+
+生成管理员密钥，只在本机保存：
 
 ```bash
-curl -s localhost:8765/v1/projects -H 'Content-Type: application/json' -d '{"name":"Support"}'
-curl -s localhost:8765/v1/datasets -H 'Content-Type: application/json' -d '{"project_id":"PROJECT_ID","name":"regression"}'
-curl -s localhost:8765/v1/traces -H 'Content-Type: application/json' -d '{"project_id":"PROJECT_ID","input":{"question":"如何退款？"},"output":"错误回复","status":"failed"}'
-curl -s localhost:8765/v1/datasets/DATASET_ID/cases/from-trace -H 'Content-Type: application/json' -d '{"trace_id":"TRACE_ID","expected":"退款请在订单页申请"}'
-curl -s localhost:8765/v1/agent-versions -H 'Content-Type: application/json' -d '{"project_id":"PROJECT_ID","label":"v1","config":{"type":"http","endpoint":"http://127.0.0.1:8766/agent","output_path":"answer"}}'
-curl -s localhost:8765/v1/evaluators -H 'Content-Type: application/json' -d '{"project_id":"PROJECT_ID","name":"Exact","kind":"exact_match","config":{}}'
-curl -s localhost:8765/v1/experiments -H 'Content-Type: application/json' -d '{"project_id":"PROJECT_ID","dataset_id":"DATASET_ID","agent_version_id":"AGENT_ID","evaluator_ids":["EVALUATOR_ID"]}'
-curl -s localhost:8765/v1/experiments/EXPERIMENT_ID
+python -c 'import secrets; print(secrets.token_urlsafe(32))'
+export LITEEVAL_ADMIN_TOKEN='替换为生成的密钥'
+python -m liteeval.cli api
 ```
 
-The worker claims queued experiments. If no worker is running, use `python -m liteeval.cli run EXPERIMENT_ID`. Start a second demo agent with `python examples/demo_agent.py v2 8767`, create a second Agent Version pointing at port 8767 and run the same dataset and evaluator again. Compare via `GET /v1/compare?left=OLD_ID&right=NEW_ID` or `python -m liteeval.cli compare OLD_ID NEW_ID`. For reproducible experiments, each Agent Version must point to a stable deployment; a label alone does not freeze external code.
+另一个终端启动 Worker，凭据必须配置在 Worker 的环境中：
 
-## Code boundaries
+```bash
+export AGENT_TOKEN='你的 Agent 密钥'
+export LITEEVAL_JUDGE_API_KEY='你的 Judge 密钥'
+python -m liteeval.cli worker
+```
 
-| Module | Responsibility |
-| --- | --- |
-| `core.py` | Shared `ContentPart`, `Event`, `EvalCase`, `AgentRun`, `Score` contracts |
-| `storage.py` | SQLite schema, immutable case revisions, experiment snapshots, project checks |
-| `adapters.py` | HTTP Agent adapter and explicit event normalization |
-| `evaluators.py` | Exact match, contains, tool called, optional LLM Judge |
-| `runner.py` | Simple harness, worker, independent scoring, strict paired compare |
-| `harness.py`, `environments.py` | Adapter/environment lifecycle boundary; HTTP runs use a no-op environment |
-| `api.py` | Local JSON HTTP interface; calls reusable modules |
-| `cli.py` | Separate API and worker entry points |
+API 默认 `127.0.0.1:8765`，数据库默认 `data/liteeval.db`。所有接口除 `GET /v1/health` 外都要求 `Authorization: Bearer TOKEN`。管理员创建项目、Agent/Evaluator 配置及项目密钥；项目密钥可管理本项目的 Trace、数据集和实验。密钥签发时只返回一次明文。
 
-The HTTP Agent receives `{"input": case.input}` and returns `{"answer": ..., "events": [...]}`; `events` is optional. Without reported events the capture level is `output_only`, so trajectory scoring abstains. LLM Judge uses `base_url`, `model`, `rubric`, and the environment variable named by `api_key_env` (default `LITEEVAL_JUDGE_API_KEY`); it posts to an OpenAI-compatible `/chat/completions` endpoint. Supplier compatibility and judge reliability require real integration testing.
+```bash
+curl http://127.0.0.1:8765/v1/projects \
+  -H "Authorization: Bearer $LITEEVAL_ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' -d '{"name":"Support"}'
+```
 
-## Scope and constraints
+完整请求及配置见 [API 文档](docs/api.md)。接入实际服务、密钥、升级备份、Docker 和联调流程见 [运行指南](docs/runbook.md)。设计及指标口径见 [架构说明](docs/architecture.md)。测试范围见 [验证记录](docs/verification.md)。
 
-This is a **local functional prototype**, not a production service. The API has no authentication, TLS, rate limiting, PII masking, artifact storage, retries, durable worker leases, or deployment gate. Keep it on loopback. HTTP Agent and judge endpoints are user-defined, so avoid untrusted configs. The separate process worker claims jobs atomically, but a worker crash leaves a job `running`; recovery and attempts are future work. The judge does not yet calibrate or persist raw model replies. Multimodal data contracts are reserved, while binary storage and multimodal evaluators are not implemented. No Codex or Docker adapter is included.
+## CLI
 
-The existing design document describes the future architecture; this code deliberately implements only the first local end-to-end slice.
+```bash
+python -m liteeval.cli --db data/liteeval.db worker --once
+python -m liteeval.cli run EXPERIMENT_ID
+python -m liteeval.cli cancel EXPERIMENT_ID
+python -m liteeval.cli compare LEFT_ID RIGHT_ID
+python -m liteeval.cli key PROJECT_ID --label sdk
+python -m liteeval.cli judge-check examples/judge_config.json
+```
+
+`--db` 位于子命令之前；也可以使用 `LITEEVAL_DB`。`judge-check` 会请求配置指定的真实服务并消耗其额度，先修改示例中的供应商地址和模型名。
+
+## 重要语义
+
+- `completed` 表示实验处理完毕；质量通过率使用 `summary.success_rate`，执行成功率使用 `summary.execution_success_rate`。
+- 缺少预期答案、轨迹或最终状态会产生 `abstain`；Judge/配置错误产生 `error`，均不冒充质量通过。
+- Compare 必须具有相同 Case 修订和 Evaluator 修订。通过 `rerun` 保留原实验快照，仅更换 Agent。
+- HTTP 重试及崩溃恢复采用至少一次调用，始终携带同一 Run 的 `Idempotency-Key`。外部 Agent 必须实现去重才能避免重复副作用。
+- 工作目录隔离便于重现任务；Docker 提供额外进程/资源限制。真实环境与当前模型需要单独验收，详细边界见运行指南。
