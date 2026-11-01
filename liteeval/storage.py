@@ -121,7 +121,7 @@ class Store:
 
     @staticmethod
     def required(db: sqlite3.Connection, table: str, id_: str) -> sqlite3.Row:
-        if table not in {"projects", "traces", "datasets", "cases", "agent_versions", "evaluator_revisions", "experiments", "runs", "artifacts", "api_keys", "dataset_versions", "evaluators"}:
+        if table not in {"projects", "traces", "datasets", "cases", "agent_versions", "evaluator_revisions", "experiments", "runs", "artifacts", "api_keys", "dataset_versions", "evaluators", "model_connections"}:
             raise ValueError("Invalid table")
         row = db.execute(f"SELECT * FROM {table} WHERE id=?", (id_,)).fetchone()
         if row is None:
@@ -152,7 +152,7 @@ class Store:
             self.required(db, "projects", project_id)
             events = [asdict(Event.from_dict(e, i)) for i, e in enumerate(events or [])]
             db.execute("INSERT INTO traces (id,project_id,kind,run_id,input_json,output_json,events_json,capture_level,status,created_at,metadata_json) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                       (id_, project_id, kind, run_id, encoded(input), encoded(output), encoded(events or []),
+                       (id_, project_id, kind, run_id, encoded(redact(input)), encoded(redact(output)), encoded(redact(events or [])),
                         capture_level, status, now(), encoded(redact(metadata or {}))))
         return {"id": id_, "kind": kind, "capture_level": capture_level}
 
@@ -208,6 +208,8 @@ class Store:
         return content
 
     def add_agent(self, project_id: str, label: str, config: dict) -> dict:
+        from .connections import bind
+        with self.connect() as db:config = bind(db, self, project_id, config)
         id_ = uid()
         validate_agent(config)
         if config.get('type') not in {'http', 'codex'}:
@@ -227,6 +229,10 @@ class Store:
     def add_evaluator(self, project_id: str, name: str, kind: str, config: dict) -> dict:
         if not isinstance(name, str) or not name.strip() or len(name) > 200 or not isinstance(config, dict):
             raise ValueError('Evaluator needs a name (max 200) and object config')
+        from .connections import bind
+        with self.connect() as db:
+            if 'connection_id' in config and kind != 'llm_judge':raise ValueError('Only LLM Judges use model connections')
+            config = bind(db, self, project_id, config, judge=True)
         validate_evaluator(kind,config)
         if kind not in {"exact_match", "contains", "regex", "json_schema", "tool_called", "tool_parameter", "latency", "cost", "file_exists", "file_content", "test_passed", "llm_judge"}:
             raise ValueError("Unsupported evaluator kind")
@@ -538,14 +544,14 @@ class Store:
             if row['attempt_id'] != attempt['id']:
                 raise LeaseLost('A newer attempt superseded this result')
             db.execute('UPDATE attempts SET status=?,finished_at=?,error=?,trace_id=?,artifact_ids_json=?,usage_json=?,cost=?,currency=? WHERE id=?',
-                       (run.status,now(),run.error,trace_id,encoded(artifacts),encoded(run.usage),run.cost,run.currency,attempt['id']))
+                       (run.status,now(),redact(run.error),trace_id,encoded(artifacts),encoded(redact(run.usage)),run.cost,run.currency,attempt['id']))
             db.execute('UPDATE runs SET status=?,output_json=?,trace_id=?,latency_ms=?,error=?,usage_json=?,cost=?,currency=?,final_state_json=? WHERE id=?',
-                       (run.status if terminal else 'retrying',encoded(run.output),trace_id,run.latency_ms,run.error,encoded(run.usage),run.cost,run.currency,encoded(run.final_state),run.id))
+                       (run.status if terminal else 'retrying',encoded(redact(run.output)),trace_id,run.latency_ms,redact(run.error),encoded(redact(run.usage)),run.cost,run.currency,encoded(redact(run.final_state)),run.id))
             if terminal:
                 db.execute('DELETE FROM scores WHERE run_id=?', (run.id,))
                 for s in scores:
                     db.execute('INSERT INTO scores (run_id,evaluator_revision_id,outcome,value,reason,evidence_json,artifact_id) VALUES (?,?,?,?,?,?,?)',
-                               (s.run_id,s.evaluator_revision_id,s.outcome,s.value,s.reason,encoded(s.evidence_event_ids),s.artifact_id))
+                               (s.run_id,s.evaluator_revision_id,s.outcome,s.value,redact(s.reason),encoded(s.evidence_event_ids),s.artifact_id))
 
     def finish_experiment(self, experiment_id, token, status, error=None):
         with self.connect() as db:

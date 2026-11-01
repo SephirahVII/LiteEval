@@ -1,6 +1,22 @@
 # API 与配置
 
-当前版本 0.2.2，数据库 schema 4。新增导入预览、评分器修订、数据集版本、实验预检和 Worker 状态；完整请求、响应及前端同源代理配置见 [前端后端接口约定](frontend-backend-contract.md)。下方 0.2.1 章节保留作为会话与归档接口说明。
+当前版本 0.3.0，数据库 schema 5。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。0.2.2 的导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方历史章节继续保留。
+
+## 0.3.0 新增接口
+
+| 方法与路径 | 作用 |
+| --- | --- |
+| POST /v1/model-connections | 保存本项目 endpoint、model 和加密 API Key |
+| GET /v1/model-connections?project_id=ID | 分页查询连接，仅返回元数据 |
+| GET /v1/model-connections/{id} | 读取连接元数据 |
+| PATCH /v1/model-connections/{id} | 更名、替换/移除 Key、归档/恢复 |
+| GET /v1/runs/{id}/events?after=0&limit=200 | 持久化活动与本地运行日志的游标查询 |
+| GET /v1/runs/{id}/statistics | Run 执行/轨迹/用量统计 |
+| GET /v1/experiments/{id}/statistics | 实验统计，含 Target/Judge 重试用量 |
+| GET /v1/runs/{id}/export?format=zip | 导出单条 Run，支持 json/jsonl/csv/zip |
+| GET /v1/experiments/{id}/export?format=zip | 导出实验，支持相同四种格式 |
+
+连接归属 Project；跨项目访问返回 403。创建 Agent 或 LLM Judge 时在 config 中引用 connection_id，自动固定 endpoint/model；密钥只在执行时解密。既有环境变量认证保留。新增 summary.rollout_usage，原有统计字段保留。
 
 ## 0.2.2 新增接口
 

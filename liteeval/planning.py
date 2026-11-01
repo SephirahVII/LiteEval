@@ -64,6 +64,8 @@ def resolve(db, store, request):
     if dataset['project_id'] != request['project_id'] or agent['project_id'] != request['project_id']:
         raise ValueError('Dataset and Agent must belong to the Project')
     agent_config = json.loads(agent['config_json'])
+    from .connections import check_ready
+    check_ready(db, store, request['project_id'], agent_config)
     validate_agent(agent_config)
     evaluators = []
     for eid in request['evaluator_ids']:
@@ -72,6 +74,7 @@ def resolve(db, store, request):
         if evaluator['project_id'] != request['project_id']:
             raise ValueError('Evaluator belongs to a different Project')
         evaluator['config'] = json.loads(evaluator['config_json'])
+        check_ready(db, store, request['project_id'], evaluator['config'])
         validate_evaluator(evaluator['kind'], evaluator['config'])
         evaluators.append(evaluator)
     return dataset, version, rows, agent, agent_config, evaluators

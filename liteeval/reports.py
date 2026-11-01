@@ -21,6 +21,7 @@ def case_outcome(run, scores, evaluator_ids):
     return 'pass' if outcomes and all(v == 'pass' for v in outcomes) else 'unscored'
 
 def summary(db, exp):
+    from .usage import summarize, records_from_db
     ids = [r[0] for r in db.execute('SELECT evaluator_revision_id FROM experiment_evaluators WHERE experiment_id=?', (exp['id'],))]
     frozen = list(db.execute('SELECT case_id,revision FROM snapshot_cases WHERE snapshot_id=? ORDER BY ordinal', (exp['snapshot_id'],)))
     runs = [dict(r) for r in db.execute('SELECT * FROM runs WHERE experiment_id=?', (exp['id'],))]
@@ -76,7 +77,8 @@ def summary(db, exp):
             'agent_usage':{'totals':usage_totals,'attempt_sample_count':usage_samples},
             'attempt_cost_by_currency':{k:{'total':sum(v),'sample_count':len(v)} for k,v in attempt_cost.items()},
             'cost_by_currency':{k:{'total':sum(v),'mean':statistics.mean(v),'sample_count':len(v)} for k,v in cost.items()},
-            'metrics':metrics,'cases':cases}
+            'metrics':metrics,'cases':cases,
+            'rollout_usage':summarize(records_from_db(db,[r['id'] for r in runs]))}
 
 def compare(store,left_id,right_id):
     with store.connect() as db:

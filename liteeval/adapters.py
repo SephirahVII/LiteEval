@@ -37,8 +37,9 @@ def map_template(template,context):
     return template
 
 class HTTPAdapter:
-    def __init__(self,config,run_id=None):
+    def __init__(self,config,run_id=None,store=None):
         self.run_id=run_id
+        self.store=store
         self.config=config
         self.endpoint=checked_url(config['endpoint'])
         self.timeout=float(config.get('timeout_seconds',30))
@@ -48,6 +49,10 @@ class HTTPAdapter:
         conf=self.config
         try:
             headers=dict(conf.get('headers',{}))
+            if conf.get('connection_id'):
+                from .connections import api_key
+                key=api_key(self.store,conf['connection_id'])
+                if key:headers['Authorization']='Bearer '+key
             for name,ref in conf.get('headers_env',{}).items():headers[name]=secret_from_env(ref)
             auth=conf.get('auth')
             if auth:
@@ -82,9 +87,9 @@ class HTTPAdapter:
         run.latency_ms=int((time.monotonic()-started)*1000)
         return run
 
-def make_adapter(config,environment=None,run_id=None):
+def make_adapter(config,environment=None,run_id=None,store=None):
     if config['type']=='http':
-        return HTTPAdapter(config,run_id)
+        return HTTPAdapter(config,run_id,store)
     if config['type']=='codex':
         from .codex import CodexAdapter
         return CodexAdapter(config,environment)

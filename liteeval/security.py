@@ -4,9 +4,17 @@ import hmac
 import os
 import re
 import secrets
+from contextvars import ContextVar
 from urllib.parse import urlsplit
 
 SENSITIVE = re.compile(r'^(authorization|api[_-]?key|access[_-]?token|secret|password|cookie)$', re.I)
+ACTIVE_SECRETS = ContextVar('liteeval_active_secrets', default=())
+
+
+def register_secret(value):
+    if value and value not in ACTIVE_SECRETS.get():
+        ACTIVE_SECRETS.set((*ACTIVE_SECRETS.get(), value))
+    return value
 
 def redact(value):
     if isinstance(value, dict):
@@ -14,6 +22,7 @@ def redact(value):
     if isinstance(value, list):
         return [redact(v) for v in value]
     if isinstance(value,str):
+        for secret in sorted(ACTIVE_SECRETS.get(), key=len, reverse=True):value=value.replace(secret,'[REDACTED]')
         for name,secret in os.environ.items():
             if len(secret)>8 and re.search(r'(TOKEN|SECRET|PASSWORD|API_KEY)',name):value=value.replace(secret,'[REDACTED]')
     return value
@@ -57,4 +66,4 @@ def safe_error(exc):
     for name, value in os.environ.items():
         if value and len(value) > 8 and re.search(r'(TOKEN|SECRET|PASSWORD|API_KEY)', name):
             text = text.replace(value, '[REDACTED]')
-    return text[:2000]
+    return redact(text)[:2000]

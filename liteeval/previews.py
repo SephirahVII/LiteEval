@@ -125,7 +125,7 @@ class PreviewRunner:
             run_data['events'] = [Event.from_dict(e) for e in run_data.get('events', [])]
             run_data.setdefault('status', 'succeeded')
             run = AgentRun(job['id'], case.id, **run_data)
-            evaluator = ConfiguredEvaluator(conf['id'], conf['kind'], json.loads(conf['config_json']))
+            evaluator = ConfiguredEvaluator(conf['id'], conf['kind'], json.loads(conf['config_json']), self.store)
             raw_artifact_ids = []
             for attempt in range(2 if conf['kind'] == 'llm_judge' else 1):
                 score = await evaluator.evaluate(case, run)

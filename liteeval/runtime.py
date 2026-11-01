@@ -19,7 +19,7 @@ def required_refs(config, judge=False):
         refs.append(auth['token_env'])
     if config.get('api_key_env'):
         refs.append(config['api_key_env'])
-    elif judge:
+    elif judge and not config.get('connection_id'):
         refs.append('LITEEVAL_JUDGE_API_KEY')
     return {r for r in refs if isinstance(r, str) and re.fullmatch(r'[A-Z][A-Z0-9_]{0,100}', r)}
 
@@ -46,14 +46,20 @@ def workers_from_db(db):
 
 def readiness(db, agent, evaluator_configs):
     refs = required_refs(agent)
+    configs = [agent]+[config for kind, config in evaluator_configs if kind == 'llm_judge']
+    connection_ids = {conf['connection_id'] for conf in configs if conf.get('connection_id')}
+    encrypted_ids = {cid for cid in connection_ids if db.execute('SELECT key_ciphertext FROM model_connections WHERE id=?', (cid,)).fetchone()[0]}
+    encrypted = bool(encrypted_ids)
     for kind, config in evaluator_configs:
         if kind == 'llm_judge':
             refs.update(required_refs(config, judge=True))
     online = [w for w in workers_from_db(db) if w['online']]
-    ready = [w for w in online if supports(w, agent) and all(w['credential_status'].get(r, False) for r in refs)]
+    ready = [w for w in online if supports(w, agent) and all(w['credential_status'].get(r, False) for r in refs)
+             and all(w['credential_status'].get('connection:'+cid, False) for cid in encrypted_ids)]
     state = 'unknown' if not online else 'ready' if len(ready) == len(online) else 'partial' if ready else 'missing'
     return {'state': state, 'checked_on': 'worker', 'required_env': sorted(refs),
             'online_workers': len(online), 'ready_workers': len(ready),
+            'connection_ids': sorted(connection_ids), 'encrypted_credentials': encrypted,
             'advisory': True, 'routing_guaranteed': False}
 
 
@@ -85,6 +91,13 @@ class WorkerRegistry:
                             executable.lower().endswith('.py') and Path(executable).is_file()),
                             'docker_cli': bool(shutil.which('docker'))}
             credential_status = {ref: bool(os.getenv(ref)) for ref in sorted(refs)}
+            from .connections import cipher
+            from cryptography.fernet import InvalidToken
+            for row in db.execute('SELECT id,key_ciphertext FROM model_connections WHERE archived_at IS NULL'):
+                try:
+                    if row['key_ciphertext']:cipher().decrypt(row['key_ciphertext'].encode())
+                    credential_status['connection:'+row['id']] = True
+                except (ValueError, InvalidToken):credential_status['connection:'+row['id']] = False
             stamp = time.time()
             db.execute('DELETE FROM workers WHERE heartbeat_at<?', (stamp-86400,))
             db.execute('INSERT INTO workers VALUES (?,?,NULL,?,?) ON CONFLICT(id) DO UPDATE SET '

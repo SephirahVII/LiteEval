@@ -10,13 +10,13 @@ from .storage import uid
 
 
 def parse_jsonl(stdout):
-    events={};order=[];output=None;usage={};partial=False;failed=False
+    events={};order=[];output=None;usage={};partial=False;failed=False;turn_usage=[]
     for line in stdout.splitlines():
         try:data=json.loads(line)
         except ValueError:partial=True;continue
         if not isinstance(data,dict):partial=True;continue
         kind=data.get('type','unknown')
-        if kind=='turn.completed':usage=data.get('usage',{})
+        if kind=='turn.completed':turn_usage.append(data.get('usage',{}))
         if kind in {'error','turn.failed'}:failed=True
         item=data.get('item')
         if isinstance(item,dict):
@@ -43,6 +43,9 @@ def parse_jsonl(stdout):
             events[key]=event
         else:
             key=uid();order.append(key);events[key]=Event('error' if kind in {'error','turn.failed'} else 'custom',kind,attributes=data,sequence=len(order)-1,event_id=key)
+    if turn_usage:
+        from .usage import sum_turns
+        usage=sum_turns(turn_usage)
     return {'events':[events[k] for k in order],'output':output,'usage':usage,'partial':partial,'failed':failed}
 
 class CodexAdapter:

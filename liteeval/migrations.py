@@ -1,5 +1,5 @@
 """Transactional additive migrations; historical snapshots and results are retained."""
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 DDL = '''
 CREATE TABLE IF NOT EXISTS api_keys (
  id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), key_hash TEXT NOT NULL UNIQUE,
@@ -75,6 +75,25 @@ V4_COLUMNS = {
 }
 
 
+V5_DDL = '''
+CREATE TABLE IF NOT EXISTS model_connections (
+ id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), name TEXT NOT NULL,
+ kind TEXT NOT NULL, endpoint TEXT NOT NULL, model TEXT, key_ciphertext TEXT,
+ key_version INTEGER NOT NULL DEFAULT 0, archived_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_connections_project ON model_connections(project_id,created_at,id);
+CREATE TABLE IF NOT EXISTS rollout_events (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL REFERENCES runs(id),
+ attempt_id TEXT NOT NULL REFERENCES attempts(id), kind TEXT NOT NULL, payload_json TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_rollout_events ON rollout_events(run_id,id);
+CREATE TABLE IF NOT EXISTS usage_records (
+ id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id), attempt_id TEXT NOT NULL REFERENCES attempts(id),
+ role TEXT NOT NULL, evaluator_revision_id TEXT, model TEXT, source TEXT NOT NULL,
+ usage_json TEXT NOT NULL, normalized_json TEXT NOT NULL, latency_ms INTEGER,
+ cost REAL, currency TEXT, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_usage_run ON usage_records(run_id,created_at,id);
+'''
+
+
 def migrate(db):
     version = db.execute('PRAGMA user_version').fetchone()[0]
     if version > SCHEMA_VERSION:
@@ -106,6 +125,8 @@ def migrate(db):
         db.execute("INSERT INTO evaluators SELECT id,project_id,strftime('%Y-%m-%dT%H:%M:%SZ','now') FROM evaluator_revisions WHERE evaluator_id IS NULL")
         db.execute('UPDATE evaluator_revisions SET evaluator_id=id WHERE evaluator_id IS NULL')
         db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_evaluator_revision ON evaluator_revisions(evaluator_id,revision)')
+        for statement in V5_DDL.split(';'):
+            if statement.strip():db.execute(statement)
         db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
         db.commit()
     except BaseException:

@@ -108,6 +108,9 @@ def revise_evaluator(store, revision_id, config, base_revision, name=None):
             raise ValueError('Evaluator name required (max 200)')
         if not isinstance(config, dict):
             raise ValueError('Evaluator config must be an object')
+        from .connections import bind
+        if 'connection_id' in config and latest['kind'] != 'llm_judge':raise ValueError('Only LLM Judges use model connections')
+        config = bind(db, store, latest['project_id'], config, judge=True)
         validate_evaluator(latest['kind'], config)
         new_id = uid()
         db.execute('INSERT INTO evaluator_revisions (id,project_id,name,kind,config_json,config_hash,evaluator_id,revision) VALUES (?,?,?,?,?,?,?,?)',

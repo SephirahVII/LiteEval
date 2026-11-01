@@ -16,6 +16,7 @@ from .sessions import (AuthError, BrowserSessions, cookie_header, cookie_token,
                        csrf_token, check_origin, normalize_origin)
 from . import previews, web_queries, catalog, planning, runtime, __version__
 from .imports import validate_batch, BatchValidationError
+from . import connections, rollouts
 
 MAX_BODY=8_000_000
 
@@ -58,6 +59,28 @@ def dispatch(store,method,path,body=None,principal=None,headers=None):
         if method=='GET' and route=='/v1/health':return 200,{'status':'ok','schema_version':SCHEMA_VERSION,'version':__version__}
         if method=='GET' and route=='/v1/runtime/status':
             admin();return 200,runtime.status(store)
+        if route=='/v1/model-connections':
+            if method=='POST':
+                scope(body['project_id']);return 201,connections.create(store,body)
+            if method=='GET':
+                pid=query.get('project_id') or principal['project_id']
+                if not pid:raise ValueError('project_id required')
+                scope(pid);return 200,connections.list_connections(store,pid,query.get('limit',50),query.get('offset',0),query.get('archived','exclude'))
+        match=re.fullmatch(r'/v1/model-connections/([0-9a-f]{32})',route)
+        if match:
+            resource('model_connections',match[1])
+            if method=='GET':return 200,connections.get(store,match[1])
+            if method=='PATCH':return 200,connections.update(store,match[1],body)
+        match=re.fullmatch(r'/v1/(experiments|runs)/([0-9a-f]{32})/(statistics|export|events)',route)
+        if match and method=='GET':
+            kind,id_,action=match.groups();resource(kind,id_)
+            args={'experiment_id':id_} if kind=='experiments' else {'run_id':id_}
+            if action=='events':
+                if kind!='runs':raise ValueError('Events require a Run')
+                return 200,rollouts.events(store,id_,query.get('after',0),query.get('limit',200))
+            if action=='statistics':return 200,rollouts.get_statistics(store,**args)
+            format=query.get('format','json');content,mime=rollouts.export(store,**args,format=format)
+            return 200,BinaryResponse(content,mime,f'{kind}-{id_}.{format}')
         if method=='POST' and route=='/v1/experiments/preflight':
             scope(body['project_id']);return 200,planning.preflight(store,body)
         match=re.fullmatch(r'/v1/datasets/([0-9a-f]{32})/import-preview',route)

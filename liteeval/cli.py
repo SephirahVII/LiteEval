@@ -41,7 +41,12 @@ def main():
     elif args.command=='judge-check':
         from dataclasses import asdict
         config=json.loads(Path(args.config_file).read_text())
-        score=asyncio.run(ConfiguredEvaluator('live-check','llm_judge',config).evaluate(EvalCase('check',1,{'question':'What is 2+2?'},'4'),AgentRun('check','check','succeeded',output='4')))
+        if config.get('connection_id'):
+            from .connections import bind
+            with store.connect() as db:
+                connection=store.required(db,'model_connections',config['connection_id'])
+                config=bind(db,store,connection['project_id'],config,judge=True)
+        score=asyncio.run(ConfiguredEvaluator('live-check','llm_judge',config,store).evaluate(EvalCase('check',1,{'question':'What is 2+2?'},'4'),AgentRun('check','check','succeeded',output='4')))
         print(json.dumps(asdict(score),ensure_ascii=False,indent=2))
         if score.outcome=='error':raise SystemExit(1)
     else:

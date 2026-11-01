@@ -78,7 +78,7 @@ Docker 约束参考：https://docs.docker.com/reference/cli/docker/container/cre
 - API/Worker 使用同一 `LITEEVAL_DB`（或相同 --db 路径），工件默认位于数据库同目录 artifacts，临时工作目录位于 workspaces。
 - Worker 崩溃后重启，租约过期时自动接管未完成实验，保留 Run ID 和已完成结果。恢复会重新调用未提交结果的远端 Agent，Agent 需要幂等支持。
 - 正常任务退出清理工作目录；强制崩溃可能留下旧 workspaces 和未引用工件。当前没有自动保留周期或垃圾回收；确认所有 Worker 停止后可清理临时 workspaces，工件应按保留策略处理。
-- 管理员密钥从环境读取；项目密钥只存 SHA-256，可撤销。结构化 JSON 工件与 SDK 有凭据字段/已知环境密钥脱敏，但不是通用个人信息识别。原始 JSONL/patch 等字节工件保存原内容，访问受项目鉴权限制。
+- 管理员密钥从环境读取；项目访问密钥只存 SHA-256，可撤销。0.3.0 的外部 API Key 使用 Fernet 加密，API/Worker 共享独立 LITEEVAL_SECRET_KEY，主密钥必须另行保存。结构化响应、Trace、本地日志及新采集的 Codex JSONL/patch 对已知调用凭据脱敏；不是通用个人信息识别，也不会回溯修改旧工件。配置和导出见 [操作指南](connections-and-rollouts.md)。
 
 ## 仍需完成的验收
 

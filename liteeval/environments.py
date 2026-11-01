@@ -67,7 +67,7 @@ class WorkspaceEnvironment:
         except BaseException:
             await self.destroy();raise
     async def execute(self,command,timeout=60,stdin=None,env=None):
-        return await run_process(command,cwd=self.path,timeout=timeout,stdin=stdin,env=env)
+        return await run_process(command,cwd=self.path,timeout=timeout,stdin=stdin,env=env,on_output=getattr(self,'on_output',None))
     async def snapshot(self):
         tests=[]
         for item in self.config.get('validation_tests',[]):
@@ -132,7 +132,7 @@ class DockerEnvironment(WorkspaceEnvironment):
             if name=='PATH':continue
             args+=['-e',name];process_env[name]=value
         args+=[self.container,*command]
-        return await run_process(args,timeout=timeout,stdin=stdin,env=process_env)
+        return await run_process(args,timeout=timeout,stdin=stdin,env=process_env,on_output=getattr(self,'on_output',None))
     async def snapshot(self):
         result=await super().snapshot();result['isolation']='docker';return result
     async def destroy(self,handle=None):

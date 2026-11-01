@@ -3,13 +3,15 @@ import asyncio
 from dataclasses import asdict
 import json
 import time
+import math
 from .adapters import make_adapter
 from .core import EvalCase,AgentRun,Score
 from .environments import make_environment,DockerEnvironment
 from .evaluators import ConfiguredEvaluator
 from .harness import SimpleHarness
 from .reports import compare
-from .security import safe_error
+from .security import safe_error,redact
+from . import rollouts, usage
 from .storage import Store,LeaseLost,now
 
 class ExperimentRunner:
@@ -20,24 +22,29 @@ class ExperimentRunner:
         async with semaphore:
             retries=exp['config'].get('max_retries',0)
             for retry in range(retries+1):
-                attempt=self.store.start_attempt(exp['id'],exp['lease_token'],case)
+                attempt=await asyncio.to_thread(self.store.start_attempt,exp['id'],exp['lease_token'],case)
                 if attempt is None:return
                 labels={'experiment':exp['id'],'lease':exp['lease_token'],'attempt':attempt['id']}
                 environment=make_environment(agent.get('environment',{}),root=self.store.artifact_root.parent/'workspaces',labels=labels)
-                adapter=make_adapter(agent,environment,attempt['run_id'])
+                await asyncio.to_thread(rollouts.append,self.store,exp['id'],exp['lease_token'],attempt,'attempt_started',{'number':attempt['number']})
+                environment.on_output=lambda stream,text: rollouts.append(self.store,exp['id'],exp['lease_token'],attempt,'log',{'stream':stream,'text':text})
+                adapter=make_adapter(agent,environment,attempt['run_id'],self.store)
                 try:run=await SimpleHarness(environment).run(case,adapter)
                 except Exception as exc:run=AgentRun(attempt['run_id'],case.id,'failed',error=safe_error(exc))
                 run.id=attempt['run_id']
+                usage.record(self.store,exp['id'],exp['lease_token'],attempt,'target',run.usage,agent.get('model'),
+                             latency_ms=run.latency_ms,cost=run.cost,currency=run.currency,source=agent['type'])
+                rollouts.append(self.store,exp['id'],exp['lease_token'],attempt,'agent_completed',{'status':run.status,'usage':usage.normalize(run.usage),'latency_ms':run.latency_ms})
                 artifacts=[]
                 if run.raw_response is not None:
                     artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'agent_raw',run.raw_response))
                     if isinstance(run.raw_response,dict) and 'stdout_jsonl' in run.raw_response:
-                        artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'codex_jsonl',run.raw_response['stdout_jsonl'].encode(),'application/x-ndjson'))
+                        artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'codex_jsonl',redact(run.raw_response['stdout_jsonl']).encode(),'application/x-ndjson'))
                 artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'trajectory',[asdict(e) for e in run.events]))
                 if run.final_state:
                     artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'final_state',run.final_state))
                     if run.final_state.get('patch_diff'):
-                        artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'patch',run.final_state['patch_diff'].encode(),'text/plain'))
+                        artifacts.append(self.store.save_artifact(exp['project_id'],run.id,'patch',redact(run.final_state['patch_diff']).encode(),'text/plain'))
                 trace=self.store.create_trace(exp['project_id'],case.input,run.output,[asdict(e) for e in run.events],run.status,run.capture_level,
                     kind='eval',run_id=run.id,metadata={'attempt_id':attempt['id'],'agent_version_id':exp['agent_version_id'],
                      'model':agent.get('model'),'latency_ms':run.latency_ms,'usage':run.usage,'cost':run.cost,'currency':run.currency})
@@ -46,8 +53,18 @@ class ExperimentRunner:
                 if not will_retry:
                     for evaluator in evaluators:
                         for judge_attempt in range(exp['config'].get('judge_retries',1)+1):
+                            judge_start=time.monotonic()
                             try:score=await evaluator.evaluate(case,run)
                             except Exception as exc:score=Score(run.id,evaluator.revision_id,'error',reason=safe_error(exc))
+                            if evaluator.kind=='llm_judge' and run.status=='succeeded':
+                                raw=score.raw_result if isinstance(score.raw_result,dict) else {}
+                                cost=raw.get('cost');currency=raw.get('currency')
+                                if type(cost) not in (int,float) or not math.isfinite(cost) or cost<0:cost=None
+                                if not isinstance(currency,str):currency=None
+                                usage.record(self.store,exp['id'],exp['lease_token'],attempt,'judge',raw.get('usage',{}),evaluator.config.get('model'),
+                                             evaluator.revision_id,int((time.monotonic()-judge_start)*1000),cost,currency,'judge_response')
+                                rollouts.append(self.store,exp['id'],exp['lease_token'],attempt,'judge_completed',
+                                                {'evaluator_id':evaluator.revision_id,'attempt':judge_attempt+1,'outcome':score.outcome,'usage':usage.normalize(raw.get('usage',{}))})
                             if score.raw_result is not None:
                                 score.artifact_id=self.store.save_artifact(exp['project_id'],run.id,'judge_raw',score.raw_result)
                                 artifacts.append(score.artifact_id)
@@ -55,6 +72,7 @@ class ExperimentRunner:
                             if judge_attempt<exp['config'].get('judge_retries',1):await asyncio.sleep(0.1*2**judge_attempt)
                         scores.append(score)
                 self.store.finish_attempt(exp['id'],exp['lease_token'],attempt,run,trace['id'],scores,artifacts,terminal=not will_retry)
+                rollouts.append(self.store,exp['id'],exp['lease_token'],attempt,'attempt_completed',{'status':run.status,'will_retry':will_retry})
                 if not will_retry:return
                 await asyncio.sleep(min(float(exp['config'].get('retry_delay_seconds',0.5)),30)*2**retry)
 
@@ -66,7 +84,7 @@ class ExperimentRunner:
             agent=json.loads(self.store.required(db,'agent_versions',exp['agent_version_id'])['config_json'])
             refs=list(db.execute('SELECT e.* FROM evaluator_revisions e JOIN experiment_evaluators x ON x.evaluator_revision_id=e.id WHERE x.experiment_id=?',(exp['id'],)))
             cases=[EvalCase(**json.loads(r[0])) for r in db.execute('SELECT r.content_json FROM snapshot_cases s JOIN case_revisions r ON r.case_id=s.case_id AND r.revision=s.revision WHERE s.snapshot_id=? ORDER BY s.ordinal',(exp['snapshot_id'],))]
-        evaluators=[ConfiguredEvaluator(r['id'],r['kind'],json.loads(r['config_json'])) for r in refs]
+        evaluators=[ConfiguredEvaluator(r['id'],r['kind'],json.loads(r['config_json']),self.store) for r in refs]
         sem=asyncio.Semaphore(exp['config'].get('concurrency',4));tasks=[];lease_lost=False
         async def monitor():
             nonlocal lease_lost

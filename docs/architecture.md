@@ -64,7 +64,15 @@ Event v2 包括 `schema_version`、`event_id`、`parent_id`、`sequence`、`kind
 | attempt_cost_by_currency | 所有已持久化 Attempt 的已上报成本，包含重试 |
 | agent_usage | 已持久化 Attempt 的 Agent token 数及样本数 |
 
-已知任何一项 fail 即 Case fail；否则必须全部 pass 才是 Case pass；缺失、abstain、error 和执行失败为 unscored。未执行为 pending，取消项为 cancelled。分母为空返回 null。没有成本数据时不会假装为零；Judge 成本暂未统一计入 Agent 汇总，原始回复仍保存。
+已知任何一项 fail 即 Case fail；否则必须全部 pass 才是 Case pass；缺失、abstain、error 和执行失败为 unscored。未执行为 pending，取消项为 cancelled。分母为空返回 null。没有成本数据时不会假装为零。0.3.0 新增独立 usage_records 与 rollout_usage，统一记录 Target/Judge 每次尝试的上报用量和费用；旧 Agent 汇总字段保持原行为。
+
+## 连接与 Rollout（0.3.0）
+
+model_connections 将不可变 endpoint/model 与可替换的加密凭据关联到 Project，使用部署环境提供的 Fernet 主密钥。Agent/Evaluator 配置固定连接的非敏感参数并保留 connection_id，Worker 调用时解密 Key。Worker 按连接检查能否解密，仅上报布尔值，不探测供应商服务。
+
+rollout_events 按 attempt_id 记录活动和本地子进程完整日志行，通过 id 游标轮询读取。写入校验实验租约与当前 Attempt，拒绝过期 Worker。HTTP 内部轨迹仍依赖端点主动上报。usage_records 独立保留每次 Target/Judge 尝试的原始/标准用量、耗时与上报费用；别名不重复相加，缓存与 reasoning 不叠加到总量，未知为 null。
+
+导出以数据库读取事务建立快照，包含固定 Case、配置、每次尝试的 Trace、Score、活动、用量与工件清单。ZIP 读取不可变工件时复核 SHA-256。连接表及凭据不进入导出；运行中导出标记部分覆盖。完整统计语义见 [操作指南](connections-and-rollouts.md)。
 
 ## Case Compare
 
