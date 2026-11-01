@@ -1,0 +1,13 @@
+schema_version = 1
+
+[harness]
+id = "example.finance-command"
+role = "agent"
+version = "1.0.0"
+protocol = "liteeval.agent/v1"
+
+[runtime]
+command = ["{python}", "{harness}/agent.py"]
+
+[metadata]
+purpose = "Deterministic integration acceptance. No LLM or API credentials."

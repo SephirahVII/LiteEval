@@ -9,10 +9,10 @@ from urllib.error import HTTPError
 from urllib.request import Request, build_opener, ProxyHandler
 from unittest.mock import patch
 
-from liteeval.api import make_handler
-from liteeval.sessions import BrowserSessions, AuthError, token_hash
-from liteeval.storage import Store
-from liteeval.migrations import SCHEMA_VERSION
+from liteeval.interfaces.http.api import make_handler
+from liteeval.interfaces.http.sessions import BrowserSessions, AuthError, token_hash
+from liteeval.infrastructure.persistence.store import Store
+from liteeval.infrastructure.persistence.migrations import SCHEMA_VERSION
 
 
 class BrowserAPITest(unittest.TestCase):

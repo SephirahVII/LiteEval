@@ -6,9 +6,9 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from liteeval.api import dispatch
-from liteeval.runner import ExperimentRunner, compare
-from liteeval.storage import Store
+from liteeval.interfaces.http.api import dispatch
+from liteeval.application.dataset_runner import ExperimentRunner, compare
+from liteeval.infrastructure.persistence.store import Store
 
 
 class Agent(BaseHTTPRequestHandler):

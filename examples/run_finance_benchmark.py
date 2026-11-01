@@ -16,16 +16,16 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from liteeval import catalog, connections, planning, rollouts
-from liteeval.codex import CodexAdapter
-from liteeval.core import EvalCase
-from liteeval.environments import WorkspaceEnvironment
-from liteeval.finance_benchmark import publish, grade_checks
-from liteeval.harness import SimpleHarness
-from liteeval.runner import ExperimentRunner
-from liteeval.runtime import WorkerRegistry
-from liteeval.security import checked_url, safe_error
-from liteeval.storage import Store, encoded
+from liteeval.application import catalog as catalog; from liteeval.application import connections as connections; from liteeval.application import planning as planning; from liteeval.application import rollouts as rollouts
+from liteeval.integrations.agents.codex import CodexAdapter
+from liteeval.domain.contracts import EvalCase
+from liteeval.infrastructure.execution.environments import WorkspaceEnvironment
+from liteeval.integrations.benchmarks.finance_v2 import publish, grade_checks
+from liteeval.integrations.harnesses.lifecycle import SimpleHarness
+from liteeval.application.dataset_runner import ExperimentRunner
+from liteeval.infrastructure.execution.workers import WorkerRegistry
+from liteeval.infrastructure.security.secrets import checked_url, safe_error
+from liteeval.infrastructure.persistence.store import Store, encoded
 
 
 def parse_judgment(text):

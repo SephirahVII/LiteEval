@@ -54,8 +54,8 @@ Copy-Item -LiteralPath 'D:\Data\Projects\GoldTrace\data' -Destination $backupTar
 终端 A 初始化 Owner，密码交互输入，不放到命令行历史：
 
 ```powershell
-python -m liteeval.cli owner-init --username owner
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main owner-init --username owner
+python -m liteeval.interfaces.cli.main api
 ```
 
 密码至少 12 个字符。再次运行 owner-init 会更新账号密码并撤销所有旧浏览器会话。Owner 已配置时，可以不设置管理员 API Token；如果保留 `LITEEVAL_ADMIN_TOKEN`，其仍须为至少 24 个字符的随机密钥，现有管理员脚本可继续使用。
@@ -64,15 +64,15 @@ python -m liteeval.cli api
 
 ```powershell
 Set-Location 'D:\Data\Projects\GoldTrace'
-python -m liteeval.cli worker
+python -m liteeval.interfaces.cli.main worker
 ```
 
 自定义数据库时，所有命令均在子命令之前传同一个 `--db`：
 
 ```powershell
-python -m liteeval.cli --db 'D:\EvalData\liteeval.db' owner-init
-python -m liteeval.cli --db 'D:\EvalData\liteeval.db' api
-python -m liteeval.cli --db 'D:\EvalData\liteeval.db' worker
+python -m liteeval.interfaces.cli.main --db 'D:\EvalData\liteeval.db' owner-init
+python -m liteeval.interfaces.cli.main --db 'D:\EvalData\liteeval.db' api
+python -m liteeval.interfaces.cli.main --db 'D:\EvalData\liteeval.db' worker
 ```
 
 健康检查返回软件 0.2.1、schema 3：
@@ -112,7 +112,7 @@ Invoke-RestMethod -Uri "$base/v1/auth/me" -WebSession $evalSession
 ```powershell
 $env:LITEEVAL_PUBLIC_ORIGIN = 'https://eval.example.com'
 $env:LITEEVAL_COOKIE_SECURE = '1'
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main api
 ```
 
 以上域名是待替换示例，平台不会自动部署或申请证书。本机 HTTP 体验时不设置 PUBLIC_ORIGIN，COOKIE_SECURE 保持 0。API 仍绑定 loopback；公开来源不改变监听地址。
@@ -189,7 +189,7 @@ $preview = Invoke-RestMethod -Method Post -Uri "$base/v1/evaluator-previews" -We
 Invoke-RestMethod "$base/v1/evaluator-previews/$($preview.id)" -WebSession $evalSession
 ```
 
-返回 202/queued 后由终端 B 的 Worker 处理，再次 GET 即可查看 completed/failed 和 score。也可在独立终端运行一次 `python -m liteeval.cli worker --once`；已有实验优先，该命令每次只处理一个实验或预览。
+返回 202/queued 后由终端 B 的 Worker 处理，再次 GET 即可查看 completed/failed 和 score。也可在独立终端运行一次 `python -m liteeval.interfaces.cli.main worker --once`；已有实验优先，该命令每次只处理一个实验或预览。
 
 预览历史真实 Run 时，只发送 project_id、evaluator_id、run_id；服务端固定使用该 Run 对应的 Case 修订和已留存证据，不读取后来编辑的 Case。合成样本标记 synthetic=true，不能冒充真实执行结果。两种模式不能混用。
 

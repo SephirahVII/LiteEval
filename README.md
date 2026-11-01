@@ -1,6 +1,6 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.3.1**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.0**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
 
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
@@ -8,7 +8,17 @@ LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.3.1**，
 
 0.2.2 进一步增加导入预览、评分器修订历史、命名数据集版本、实验预检哈希和 Worker 就绪上报，数据库升级到 schema 4。前端原型可按 [接口约定](docs/frontend-backend-contract.md) 对接；已有数据库升级前停止 API/Worker 并备份，再统一启动新版。预检不调用外部服务，Worker 状态是提示信息，尚未实现上线 Gate。
 
-## 当前能力
+## 目录式 Benchmark（0.4.0）
+
+后端已按 domain、ports、application、integrations、infrastructure、interfaces 分层；旧 Python 模块路径已删除，没有兼容转发层。新目录链路使用 Ground Truth、固定资源发布、独立 Agent/Evaluation Harness、真实文件采集和隔离评分。数据库 schema 6。
+
+```bash
+python examples/run_native_benchmark.py
+```
+
+这会运行两道离线计算题，产生实际子进程日志、JSON/Markdown/二进制产物、评分、重评记录与 ZIP。它是确定性程序的执行验收，模型调用数为 0，不是 LLM 或官方 FAB 成绩。配置和真实能力边界见 [目录 Benchmark 操作指南](docs/benchmark-packages.md)，新架构见 [架构说明](docs/architecture.md)。
+
+## 数据与连接能力
 
 0.3.1 新增 Finance Agent v2 官方公开集的固定来源导入与真实模型试跑脚本：27 题、9 类、保留原始 rubric/权重/must-pass，导入后发布不可变版本。可先只准备题库，再运行小规模诊断与导出。方法、运行步骤和实际结果见 [FAB v2 接入与试跑报告](docs/finance-agent-v2.md)。
 
@@ -35,14 +45,14 @@ Demo 自动启动本地 API 和两个示例 Agent，执行 Trace 转 Case、批�
 
 ## 启动常驻服务
 
-浏览器 Owner 模式可先执行 `python -m liteeval.cli owner-init` 交互设置密码，再执行下面的 API/Worker 命令。API Key 管理员模式仍按下述环境变量启动。Owner 登录接口与会话用法见 [第一步操作指南](docs/step-1-backend.md)；Web 页面将在下一步实现。
+浏览器 Owner 模式可先执行 `python -m liteeval.interfaces.cli.main owner-init` 交互设置密码，再执行下面的 API/Worker 命令。API Key 管理员模式仍按下述环境变量启动。Owner 登录接口与会话用法见 [第一步操作指南](docs/step-1-backend.md)；Web 页面将在下一步实现。
 
 生成管理员密钥，只在本机保存：
 
 ```bash
 python -c 'import secrets; print(secrets.token_urlsafe(32))'
 export LITEEVAL_ADMIN_TOKEN='替换为生成的密钥'
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main api
 ```
 
 另一个终端启动 Worker，凭据必须配置在 Worker 的环境中：
@@ -50,7 +60,7 @@ python -m liteeval.cli api
 ```bash
 export AGENT_TOKEN='你的 Agent 密钥'
 export LITEEVAL_JUDGE_API_KEY='你的 Judge 密钥'
-python -m liteeval.cli worker
+python -m liteeval.interfaces.cli.main worker
 ```
 
 API 默认 `127.0.0.1:8765`，数据库默认 `data/liteeval.db`。所有接口除 `GET /v1/health` 外都要求 `Authorization: Bearer TOKEN`。管理员创建项目、Agent/Evaluator 配置及项目密钥；项目密钥可管理本项目的 Trace、数据集和实验。密钥签发时只返回一次明文。
@@ -66,12 +76,12 @@ curl http://127.0.0.1:8765/v1/projects \
 ## CLI
 
 ```bash
-python -m liteeval.cli --db data/liteeval.db worker --once
-python -m liteeval.cli run EXPERIMENT_ID
-python -m liteeval.cli cancel EXPERIMENT_ID
-python -m liteeval.cli compare LEFT_ID RIGHT_ID
-python -m liteeval.cli key PROJECT_ID --label sdk
-python -m liteeval.cli judge-check examples/judge_config.json
+python -m liteeval.interfaces.cli.main --db data/liteeval.db worker --once
+python -m liteeval.interfaces.cli.main run EXPERIMENT_ID
+python -m liteeval.interfaces.cli.main cancel EXPERIMENT_ID
+python -m liteeval.interfaces.cli.main compare LEFT_ID RIGHT_ID
+python -m liteeval.interfaces.cli.main key PROJECT_ID --label sdk
+python -m liteeval.interfaces.cli.main judge-check examples/judge_config.json
 ```
 
 `--db` 位于子命令之前；也可以使用 `LITEEVAL_DB`。`judge-check` 会请求配置指定的真实服务并消耗其额度，先修改示例中的供应商地址和模型名。

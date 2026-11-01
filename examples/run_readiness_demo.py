@@ -12,13 +12,13 @@ from urllib.request import Request, build_opener, ProxyHandler
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from liteeval.api import make_handler
-from liteeval.previews import PreviewRunner
-from liteeval.runner import ExperimentRunner
-from liteeval.sessions import BrowserSessions
-from liteeval.storage import Store
+from liteeval.interfaces.http.api import make_handler
+from liteeval.application.previews import PreviewRunner
+from liteeval.application.dataset_runner import ExperimentRunner
+from liteeval.interfaces.http.sessions import BrowserSessions
+from liteeval.infrastructure.persistence.store import Store
 from liteeval import __version__
-from liteeval.migrations import SCHEMA_VERSION
+from liteeval.infrastructure.persistence.migrations import SCHEMA_VERSION
 
 
 class Agent(BaseHTTPRequestHandler):

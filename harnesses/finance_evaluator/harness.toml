@@ -1,0 +1,8 @@
+schema_version = 1
+[harness]
+id = "example.finance-evaluator"
+role = "evaluation"
+version = "1.0.0"
+protocol = "liteeval.evaluation/v1"
+[runtime]
+command = ["{python}", "{harness}/evaluate.py"]

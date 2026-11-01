@@ -8,9 +8,9 @@ import sys
 import threading
 from urllib.request import Request,urlopen
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from liteeval.api import make_handler
-from liteeval.storage import Store
-from liteeval.runner import ExperimentRunner
+from liteeval.interfaces.http.api import make_handler
+from liteeval.infrastructure.persistence.store import Store
+from liteeval.application.dataset_runner import ExperimentRunner
 
 class Agent(BaseHTTPRequestHandler):
     def do_POST(self):

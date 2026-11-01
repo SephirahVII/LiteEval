@@ -8,12 +8,12 @@ import time
 import unittest
 from unittest.mock import patch
 
-from liteeval.api import dispatch
-from liteeval import catalog, planning, runtime, migrations
-from liteeval.core import EvalCase
-from liteeval.imports import validate_batch, BatchValidationError
-from liteeval.sessions import BrowserSessions, token_hash
-from liteeval.storage import Store, Conflict, SCHEMA, digest, encoded
+from liteeval.interfaces.http.api import dispatch
+from liteeval.application import catalog as catalog; from liteeval.application import planning as planning; from liteeval.infrastructure.execution import workers as runtime; from liteeval.infrastructure.persistence import migrations as migrations
+from liteeval.domain.contracts import EvalCase
+from liteeval.application.imports import validate_batch, BatchValidationError
+from liteeval.interfaces.http.sessions import BrowserSessions, token_hash
+from liteeval.infrastructure.persistence.store import Store, Conflict, SCHEMA, digest, encoded
 
 
 class CatalogPlanningTest(unittest.TestCase):
@@ -217,7 +217,7 @@ class CatalogPlanningTest(unittest.TestCase):
                     {'TEST_WORKER_TOKEN': '', 'LITEEVAL_JUDGE_API_KEY': 'present'}):
             with patch.dict('os.environ', env):runtime.WorkerRegistry(self.store).heartbeat()
         self.assertEqual(planning.preflight(self.store, self.body(agent_version_id=aid, evaluator_ids=[judge]))['credential_readiness']['state'], 'missing')
-        with patch('liteeval.runtime.time.time', return_value=time.time()+runtime.ONLINE_SECONDS+1):
+        with patch('liteeval.infrastructure.execution.workers.time.time', return_value=time.time()+runtime.ONLINE_SECONDS+1):
             self.assertEqual(runtime.status(self.store)['online_workers'], 0)
 
     def test_worker_capability_checks_include_http_docker_environment(self):

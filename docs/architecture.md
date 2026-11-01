@@ -1,26 +1,60 @@
-# 后端架构与结果口径
+# 后端架构与运行口径
 
-0.2.2 新增 catalog（评分器修订/数据集命名版本）、imports（预览与正式导入共享校验）、planning（无外部调用的预检）和 runtime（Worker 上报）。数据库 schema 4；事件契约仍为 v2。预检与创建在同一事务核对快照摘要，发布版本复用不可变快照，旧幂等请求重试仍优先返回原实验。Worker 就绪信息不参与执行摘要，且仅为提示，不构成定向调度保证。接口约定见 [前端对接文档](frontend-backend-contract.md)。
+更新：2026-11-02，软件 0.4.0 / SQLite schema 6。
 
-0.2.1 在原评测核心之外增加 `sessions`（Owner 会话、Origin/CSRF 与撤销）、`web_queries`（轻量进度与分页结果）和 `previews`（独立持久评分预览）。数据库 schema 为 3，Event/ContentPart 契约仍为 v2。会话与预览不改变正式实验的 Score、快照和 Compare 语义。
+本轮直接重组后端，不保留旧 Python 模块导入路径或兼容 facade。先前提案中的 fallback、旧路径转发及以旧版本兼容为验收目标的安排取消。保留有用的项目、凭据、Trace、Dataset 服务实现，并迁入新模块；它们不是目录 Benchmark 的自动回退路径。
 
-Dataset/Case/Evaluator 归档不删除历史引用；新实验排除归档项，rerun 保留原快照。Case 修订通过 BEGIN IMMEDIATE 与 base_revision 校验避免并发覆盖；旧客户端省略该字段仍兼容。预览 Worker 采用独立租约、心跳与写入校验，恢复可能再次调用 Judge，原始回复以独立工件保存。具体边界和操作见 [第一步指南](step-1-backend.md)。
+## 当前结构
 
-## 模块分工
+```text
+liteeval/
+├── domain/                  # 契约、TaskSpec、评分规则、usage、路径、值对象
+├── ports/                   # BenchmarkRepository/ResourceStore/Harness 协议
+├── application/             # 发布、预检、执行、重评、导出、已有业务用例
+├── integrations/
+│   ├── agents/              # HTTP/Codex 接入
+│   ├── models/              # 模型供应商接入
+│   ├── harnesses/           # Agent/Evaluation Harness 与 registry
+│   ├── judges/              # 已有规则/Judge 集成
+│   └── benchmarks/          # FAB 格式转换
+├── infrastructure/
+│   ├── persistence/         # SQLite schema 6、Repository、查询
+│   ├── artifacts/           # 内容寻址 blob
+│   ├── execution/           # 进程、工作区、Docker、Worker
+│   ├── sources/             # Benchmark/Harness 源码快照与解析
+│   ├── network/             # HTTP
+│   └── security/            # 凭据与脱敏
+├── interfaces/              # HTTP、CLI、SDK
+└── bootstrap.py             # 为目录用例注入具体依赖
+```
 
-| 模块 | 职责 |
-| --- | --- |
-| core | ContentPart、Event、EvalCase、AgentRun、Score 版本化契约 |
-| storage / migrations | SQLite 事务、Case 修订、数据集快照、配置哈希、租约、Attempt、项目权限及迁移 |
-| config / security | 提前校验配置、环境变量密钥引用、项目令牌哈希、结构化凭据脱敏 |
-| api / cli | 认证后的 HTTP 入口和独立 API/Worker 进程生命周期 |
-| transport / adapters / providers | 有界 HTTP、请求映射、Agent 执行、OpenAI 兼容 Judge |
-| runner / harness | 并发调度、重试、心跳与写入租约校验、执行/快照/清理生命周期 |
-| process / environments / codex | 有界子进程、独立工作目录、Docker 约束、Codex JSONL 标准化 |
-| evaluators / reports | 显式证据要求、规则/Judge 评分、实验汇总、Case Compare |
-| sdk | 同步/异步入口包装、嵌套 span、可选内容记录、默认 fail-open |
+Domain/Ports 不导入 I/O、Application 或集成框架。新目录 Benchmark 用例通过注入的 Repository、Loader、BlobStore、RuntimeFactory、Registry 和连接解析器使用部署能力。现有 Dataset/Trace 服务中的 SQL 与业务规则尚有集中实现，后续按新业务需要拆分，不设置保持旧模块路径的约束。
 
-API 与 Worker 共享本机 SQLite（WAL 模式）和工件目录。多个 Worker 可处理不同实验，每个实验只允许一个有效租约持有者，实验内部并发处理 Case。当前部署面向单机；SQLite 文件不能放在网络共享盘上作为多主机队列。
+所有内部导入已改到新路径；JSON/hash/ID、错误、路径选择、Schema 和 usage 标准化已从存储/adapter 中提取。静态依赖扫描包含函数内导入；当前发现的模块依赖环为 0。架构测试限制 Domain/Ports 的依赖及顶层模块数量，防止重新添加兼容转发层。
+
+## 目录 Benchmark 的执行链路
+
+```text
+DirectoryLoader → TaskSpec + 资源清单 → Benchmark Release
+                                ↓
+                 固定 Agent/Evaluation Harness 修订
+                                ↓
+               RunPlan（资源/代码 digest、连接、预算）
+                                ↓
+       Target Runtime → 真实 Submission → 独立 Evaluation Runtime
+                                ↓
+                  检查、聚合、持久化、导出/重评
+```
+
+Agent Harness 可以是注册的命令实现，或内置 JSON action 模型循环。Evaluation Harness 可以是内置 command/LLM Judge，或协议化的外部离线评分 runner。平台统一拥有工作区、阶段及持久化；外部评分 runner 不再触发 native 检查，不重复计分。角色、配置和资源 digest 固定到运行计划。
+
+目录模式明确分开 ground_truth、rubric、test 和 submission；不会把评分资源传给 Target。初始化支持二进制文件，采集保存实际文件 bytes；工作区删除后仍可重评和导出。Workspace 是可信本地模式，Docker 是独立容器模式，二者不自动降级。
+
+实际格式、命令、验收方式及未实现项见 [目录 Benchmark 指南](benchmark-packages.md)。离线两题验收是确定性进程执行，不是 LLM 或官方 FAB 质量成绩。本机 Docker 未实跑，独立 Linux CI 用于进一步验收。
+
+## Dataset/Trace 服务的独立口径
+
+下列内容描述现有 Dataset/Trace 服务；不要将其旧 Case 字段、快照比较规则或状态覆盖标签当成目录 Benchmark 已完整验收的依据。
 
 ## 数据与不可变性
 

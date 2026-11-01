@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 import tempfile
 import threading
 import time
@@ -13,18 +14,18 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError
 
-from liteeval.api import dispatch,make_handler
-from liteeval.adapters import HTTPAdapter,select
-from liteeval.core import EvalCase,AgentRun,Score,Event,ContentPart
-from liteeval.codex import parse_jsonl
-from liteeval.environments import WorkspaceEnvironment,DockerEnvironment,snapshot_bytes
-from liteeval.process import run_process
-from liteeval.evaluators import ConfiguredEvaluator,validate_schema
-from liteeval.runner import ExperimentRunner
-from liteeval.reports import compare
-from liteeval.sdk import TraceClient
-from liteeval.storage import Store,Conflict,LeaseLost,SCHEMA
-from liteeval.migrations import SCHEMA_VERSION
+from liteeval.interfaces.http.api import dispatch, make_handler
+from liteeval.integrations.agents.http import HTTPAdapter, select
+from liteeval.domain.contracts import EvalCase, AgentRun, Score, Event, ContentPart
+from liteeval.integrations.agents.codex import parse_jsonl
+from liteeval.infrastructure.execution.environments import WorkspaceEnvironment, DockerEnvironment, snapshot_bytes
+from liteeval.infrastructure.execution.process import run_process
+from liteeval.integrations.judges.configured import ConfiguredEvaluator, validate_schema
+from liteeval.application.dataset_runner import ExperimentRunner
+from liteeval.application.reports import compare
+from liteeval.interfaces.sdk.tracing import TraceClient
+from liteeval.infrastructure.persistence.store import Store, Conflict, LeaseLost, SCHEMA
+from liteeval.infrastructure.persistence.migrations import SCHEMA_VERSION
 
 class Service(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -304,7 +305,9 @@ class MVPTest(unittest.TestCase):
         self.assertTrue(result['details'][0]['mixed'])
 
     def test_process_timeout_preserves_output(self):
-        result=asyncio.run(run_process(['python','-u','-c','import time; print("partial"); time.sleep(5)'],timeout=0.1))
+        # Allow interpreter startup on loaded Windows hosts; still terminate well
+        # before the child exits naturally, and verify emitted bytes are drained.
+        result=asyncio.run(run_process([sys.executable,'-S','-u','-c','import time; print("partial",flush=True); time.sleep(30)'],timeout=2))
         self.assertTrue(result['timed_out']);self.assertIn('partial',result['stdout'])
 
     def test_snapshot_refuses_symlink_parent(self):

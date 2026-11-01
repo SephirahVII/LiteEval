@@ -8,13 +8,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from liteeval import catalog
-from liteeval.codex import CodexAdapter, parse_jsonl
-from liteeval.config import validate_agent
-from liteeval.core import EvalCase
-from liteeval.finance_benchmark import load_bundle, publish, grade_checks
-from liteeval.storage import Store
-from liteeval.usage import normalize
+from liteeval.application import catalog as catalog
+from liteeval.integrations.agents.codex import CodexAdapter, parse_jsonl
+from liteeval.application.configuration import validate_agent
+from liteeval.domain.contracts import EvalCase
+from liteeval.integrations.benchmarks.finance_v2 import load_bundle, publish, grade_checks
+from liteeval.infrastructure.persistence.store import Store
+from liteeval.application.usage import normalize
 
 BUNDLE=Path(__file__).resolve().parents[1]/'benchmarks/finance_agent_v2'
 

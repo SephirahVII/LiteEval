@@ -7,10 +7,10 @@
 日常账号、登录/退出、CSRF 和 PowerShell 完整操作见 [第一步指南](step-1-backend.md)。0.2.2 启动方式保持相同：
 
 ```powershell
-python -m liteeval.cli owner-init --username owner
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main owner-init --username owner
+python -m liteeval.interfaces.cli.main api
 # 另一个终端
-python -m liteeval.cli worker
+python -m liteeval.interfaces.cli.main worker
 ```
 
 已有账号无需重复 owner-init；重复初始化会撤销旧会话。升级已有数据前停止所有旧 API/Worker 并备份数据库及工件，再用同一版本重新启动；首次打开自动事务迁移至 schema 4。
@@ -20,7 +20,7 @@ python -m liteeval.cli worker
 ```powershell
 $env:LITEEVAL_PUBLIC_ORIGIN = 'http://localhost:5173'
 $env:LITEEVAL_COOKIE_SECURE = '0'
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main api
 ```
 
 前端将 `/v1` 请求代理到 API，通过相对地址请求并保留 Cookie。浏览器会自动发送 Origin，前端不要尝试手动设置该请求头。HTTPS 正式入口使用对应 PUBLIC_ORIGIN，并启用 Secure Cookie。

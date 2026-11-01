@@ -15,14 +15,14 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 from cryptography.fernet import Fernet
-from liteeval import connections, migrations, planning, rollouts, runtime, usage
-from liteeval.api import dispatch, BinaryResponse, make_handler
-from liteeval.adapters import HTTPAdapter
-from liteeval.codex import parse_jsonl
-from liteeval.process import run_process
-from liteeval.runner import ExperimentRunner
-from liteeval.security import ACTIVE_SECRETS, register_secret
-from liteeval.storage import Store, LeaseLost
+from liteeval.application import connections as connections; from liteeval.infrastructure.persistence import migrations as migrations; from liteeval.application import planning as planning; from liteeval.application import rollouts as rollouts; from liteeval.infrastructure.execution import workers as runtime; from liteeval.application import usage as usage
+from liteeval.interfaces.http.api import dispatch, BinaryResponse, make_handler
+from liteeval.integrations.agents.http import HTTPAdapter
+from liteeval.integrations.agents.codex import parse_jsonl
+from liteeval.infrastructure.execution.process import run_process
+from liteeval.application.dataset_runner import ExperimentRunner
+from liteeval.infrastructure.security.secrets import ACTIVE_SECRETS, register_secret
+from liteeval.infrastructure.persistence.store import Store, LeaseLost
 
 
 class ModelService(BaseHTTPRequestHandler):
@@ -177,14 +177,14 @@ class ConnectionsRolloutsTest(unittest.TestCase):
         self.assertEqual(config['endpoint'], self.url+'/v1/chat/completions')
         self.assertEqual(config['request_template']['model'], 'target-model')
         self.assertEqual(config['output_path'], '$.choices[0].message.content')
-        from liteeval.core import EvalCase
+        from liteeval.domain.contracts import EvalCase
         run=asyncio.run(HTTPAdapter(config, store=self.store).invoke(EvalCase('test',1,{'prompt':'hello'})))
         self.assertEqual(run.status,'succeeded')
         self.assertEqual(self.server.calls[0][2], {'model':'target-model','messages':[{'role':'user','content':'hello'}]})
 
     def test_activity_is_live_redacted_and_lease_fenced(self):
         _, _, _, _, exp = self.configured();claimed = self.store.claim(exp, 30)
-        from liteeval.core import EvalCase
+        from liteeval.domain.contracts import EvalCase
         content = self.store.list_cases(self.did)['items'][0]
         case = EvalCase(**{k:v for k,v in content.items() if k in EvalCase.__dataclass_fields__})
         attempt = self.store.start_attempt(exp, claimed['lease_token'], case)
@@ -238,7 +238,7 @@ class ConnectionsRolloutsTest(unittest.TestCase):
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='model_connections'").fetchone())
         upgraded = Store(self.path)
         self.assertEqual(upgraded.list_items('projects')['total'], 2)
-        with upgraded.connect() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 5)
+        with upgraded.connect() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], migrations.SCHEMA_VERSION)
 
     def test_authenticated_http_connections_and_binary_download(self):
         from urllib.request import Request, build_opener, ProxyHandler

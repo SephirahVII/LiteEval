@@ -12,12 +12,12 @@ import unittest
 from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from liteeval.api import dispatch
-from liteeval.core import AgentRun, EvalCase, Score
-from liteeval.migrations import COLUMNS, DDL
-from liteeval.previews import enqueue, get_preview, PreviewRunner
-from liteeval.storage import Store, Conflict, LeaseLost, SCHEMA, digest, encoded
-from liteeval import web_queries
+from liteeval.interfaces.http.api import dispatch
+from liteeval.domain.contracts import AgentRun, EvalCase, Score
+from liteeval.infrastructure.persistence.migrations import COLUMNS, DDL
+from liteeval.application.previews import enqueue, get_preview, PreviewRunner
+from liteeval.infrastructure.persistence.store import Store, Conflict, LeaseLost, SCHEMA, digest, encoded
+from liteeval.infrastructure.persistence import queries as web_queries
 
 
 class BackendReadinessTest(unittest.TestCase):
@@ -157,7 +157,7 @@ class BackendReadinessTest(unittest.TestCase):
 
     def test_cli_worker_once_processes_preview_queue(self):
         job = enqueue(self.store, self.preview_body())
-        result = subprocess.run([sys.executable, '-m', 'liteeval.cli', '--db', self.store.path, 'worker', '--once'],
+        result = subprocess.run([sys.executable, '-m', 'liteeval.interfaces.cli.main', '--db', self.store.path, 'worker', '--once'],
                                 cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['preview_id'], job['id'])
@@ -253,7 +253,7 @@ class MigrationTest(unittest.TestCase):
     def test_failed_migration_rolls_back_schema_and_version(self):
         with tempfile.TemporaryDirectory() as root:
             path = Path(root)/'old.db';self.v2_database(path)
-            from liteeval import migrations
+            from liteeval.infrastructure.persistence import migrations as migrations
             with patch.object(migrations, 'V3_DDL', migrations.V3_DDL+'INVALID SQL;'):
                 with self.assertRaises(sqlite3.OperationalError):Store(path)
             db = sqlite3.connect(path)

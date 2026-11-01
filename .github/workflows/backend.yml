@@ -28,3 +28,23 @@ jobs:
       - run: python examples/run_catalog_demo.py
       - name: Prepare public finance benchmark without model calls
         run: python examples/run_finance_benchmark.py
+      - name: Execute native directory benchmark with real subprocesses
+        run: python examples/run_native_benchmark.py
+
+  docker-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .
+      - name: Prepare and freeze actual Docker image
+        shell: bash
+        run: |
+          docker pull python:3.12-slim
+          image=$(docker image inspect --format '{{index .RepoDigests 0}}' python:3.12-slim)
+          echo "LITEEVAL_TEST_DOCKER_IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Real Docker execution and independent Judge
+        run: python -m unittest discover -s tests -p test_native_benchmark.py -v

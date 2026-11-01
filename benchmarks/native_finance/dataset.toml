@@ -1,0 +1,24 @@
+schema_version = 1
+
+[benchmark]
+id = "native-finance"
+version = "1.0.0"
+name = "Native finance execution acceptance"
+description = "Deterministic local execution acceptance; not an LLM capability benchmark"
+license = "MIT"
+
+[tasks]
+include = ["tasks/*/task.toml"]
+
+[defaults]
+environment_profile = "local"
+target_timeout_seconds = 30
+judge_timeout_seconds = 10
+
+[environment_profiles.local]
+type = "workspace"
+
+[harness_requirements]
+evaluation_protocol = "liteeval.task/v1"
+default_evaluation_harness = "liteeval.native/v1"
+target_capabilities = ["workspace.read", "workspace.write", "process.execute"]

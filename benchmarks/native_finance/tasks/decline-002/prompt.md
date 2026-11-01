@@ -1,0 +1,1 @@
+Read data/revenue.csv and compute (last revenue - first revenue) / first revenue. Write outputs/result.json with growth_rate, explain in outputs/report.md, and copy data/source.bin to outputs/source-copy.bin.

@@ -23,9 +23,9 @@ API 和每个 Worker 都需要配置同一个 `LITEEVAL_SECRET_KEY`。主密钥�
 
 ```powershell
 # 终端一，另需配置管理员 Token，或按旧指南使用 Owner 登录。
-python -m liteeval.cli api
+python -m liteeval.interfaces.cli.main api
 # 终端二，先加载同一个 LITEEVAL_SECRET_KEY。
-python -m liteeval.cli worker
+python -m liteeval.interfaces.cli.main worker
 ```
 
 `.env.example` 是配置样例；CLI 不自动读取 `.env`。

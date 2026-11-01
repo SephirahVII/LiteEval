@@ -97,8 +97,8 @@ python examples/run_finance_benchmark.py --run --rows 3,4 --model gpt-6-sol --pr
 通过现有 API 查看这些数据：
 
 ```powershell
-python -m liteeval.cli --db data/finance-agent-v2/liteeval.db owner-init
-python -m liteeval.cli --db data/finance-agent-v2/liteeval.db api
+python -m liteeval.interfaces.cli.main --db data/finance-agent-v2/liteeval.db owner-init
+python -m liteeval.interfaces.cli.main --db data/finance-agent-v2/liteeval.db api
 ```
 
 Owner 登录后可访问原有 dataset/version、experiment/results、run、statistics、events 和 export 接口。这里是独立数据库，不会自动出现在其他 --db 指向的服务中。

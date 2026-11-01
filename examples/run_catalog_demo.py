@@ -15,9 +15,9 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from liteeval import __version__
-from liteeval.api import make_handler
-from liteeval.migrations import SCHEMA_VERSION
-from liteeval.storage import Store
+from liteeval.interfaces.http.api import make_handler
+from liteeval.infrastructure.persistence.migrations import SCHEMA_VERSION
+from liteeval.infrastructure.persistence.store import Store
 
 
 class Agent(BaseHTTPRequestHandler):
@@ -76,7 +76,7 @@ def main():
             revision = call('POST', f'/v1/evaluators/{eid}/revisions', {'name': 'Exact updated', 'config': {}, 'base_revision': 1}, 201)
             assert call('GET', f'/v1/evaluators/{eid}/revisions')['total'] == 2
             aid = call('POST', '/v1/agent-versions', {'project_id': pid, 'label': 'echo', 'config': {'type': 'http', 'endpoint': f'http://127.0.0.1:{agent.server_port}'}}, 201)['id']
-            worker = subprocess.Popen([sys.executable, '-m', 'liteeval.cli', '--db', store.path, 'worker'], cwd=ROOT,
+            worker = subprocess.Popen([sys.executable, '-m', 'liteeval.interfaces.cli.main', '--db', store.path, 'worker'], cwd=ROOT,
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             ready = wait_for(lambda: call('GET', '/v1/runtime/status'), lambda r: r['online_workers'] == 1)
             payload = {'project_id': pid, 'dataset_version_id': release['id'], 'agent_version_id': aid, 'evaluator_ids': [eid], 'name': 'baseline'}

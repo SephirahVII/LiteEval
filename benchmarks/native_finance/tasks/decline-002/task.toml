@@ -1,0 +1,29 @@
+schema_version = 1
+[task]
+id = "decline-002"
+title = "Revenue growth"
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "outputs/result.json"
+required = true
+[[artifacts]]
+path = "outputs/report.md"
+required = true
+[[artifacts]]
+path = "outputs/source-copy.bin"
+required = true
+[judge]
+ground_truth_file = "judge/ground_truth.json"
+[[judge.checks]]
+id = "calculation"
+type = "command"
+entrypoint = "judge/test.py"
+command = ["{python}", "/judge/test.py", "--ground-truth", "/judge/ground_truth.json", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 1
+must_pass = true
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 1
