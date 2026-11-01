@@ -1,0 +1,3 @@
+# Preserve the upstream dataset bytes so SHA-256 verification survives Windows checkout.
+# The upstream CSV includes trailing spaces; retain them for source hash verification.
+benchmarks/finance_agent_v2/public.csv -text -whitespace

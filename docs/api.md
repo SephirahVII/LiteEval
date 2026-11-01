@@ -1,6 +1,6 @@
 # API 与配置
 
-当前版本 0.3.0，数据库 schema 5。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。0.2.2 的导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方历史章节继续保留。
+当前版本 0.3.1，数据库 schema 5。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。公开金融题库接入与真实执行结果见 [FAB v2 报告](finance-agent-v2.md)。0.2.2 的导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方历史章节继续保留。
 
 ## 0.3.0 新增接口
 

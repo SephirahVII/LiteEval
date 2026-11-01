@@ -19,6 +19,10 @@ def validate_agent(config):
         for name in config.get('headers',{}):
             if name.lower() in {'authorization','cookie','proxy-authorization'}:raise ValueError('Use headers_env/auth token_env for credentials')
     elif config.get('type')!='codex':raise ValueError('Unknown Agent type')
+    if config.get('type')=='codex':
+        for key in ('ignore_user_config','ephemeral','inherit_proxy'):
+            if key in config and type(config[key]) is not bool:raise ValueError(f'{key} must be boolean')
+        if 'web_search' in config and config['web_search'] not in {'live','cached','disabled'}:raise ValueError('Invalid web_search mode')
     env=config.get('environment',{})
     if env.get('type','none') not in {'none','workspace','docker'}:raise ValueError('Unknown environment type')
     if config.get('type')=='codex' and env.get('type') not in {'workspace','docker'}:raise ValueError('Codex needs workspace or docker environment')

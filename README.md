@@ -1,6 +1,6 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.3.0**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.3.1**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
 
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
@@ -9,6 +9,8 @@ LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.3.0**，
 0.2.2 进一步增加导入预览、评分器修订历史、命名数据集版本、实验预检哈希和 Worker 就绪上报，数据库升级到 schema 4。前端原型可按 [接口约定](docs/frontend-backend-contract.md) 对接；已有数据库升级前停止 API/Worker 并备份，再统一启动新版。预检不调用外部服务，Worker 状态是提示信息，尚未实现上线 Gate。
 
 ## 当前能力
+
+0.3.1 新增 Finance Agent v2 官方公开集的固定来源导入与真实模型试跑脚本：27 题、9 类、保留原始 rubric/权重/must-pass，导入后发布不可变版本。可先只准备题库，再运行小规模诊断与导出。方法、运行步骤和实际结果见 [FAB v2 接入与试跑报告](docs/finance-agent-v2.md)。
 
 0.3.0 新增项目级模型连接与 API Key 加密保存，可供 HTTP Agent、直接模型调用和 LLM Judge 使用；新增运行中本地日志的游标查询、Target/Judge/重试用量记录，以及实验或单条 Run 的 JSON/JSONL/CSV/ZIP 导出。数据库升级到 schema 5。完整配置、请求示例、统计口径和边界见 [连接与 Rollout 操作指南](docs/connections-and-rollouts.md)。User Agent 暂不纳入本轮。
 

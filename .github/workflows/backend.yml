@@ -26,3 +26,5 @@ jobs:
       - run: python examples/run_demo.py
       - run: python examples/run_readiness_demo.py
       - run: python examples/run_catalog_demo.py
+      - name: Prepare public finance benchmark without model calls
+        run: python examples/run_finance_benchmark.py

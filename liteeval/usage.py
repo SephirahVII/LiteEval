@@ -11,8 +11,8 @@ PATHS = {
     'total_tokens': ('total_tokens',),
     'cached_input_tokens': ('cached_input_tokens', 'cache_read_input_tokens', 'cache_read_tokens',
                             'input_tokens_details.cached_tokens', 'prompt_tokens_details.cached_tokens'),
-    'cache_write_tokens': ('cache_write_tokens', 'cache_creation_input_tokens', 'cache_creation_tokens'),
-    'reasoning_tokens': ('reasoning_tokens', 'output_tokens_details.reasoning_tokens', 'completion_tokens_details.reasoning_tokens'),
+    'cache_write_tokens': ('cache_write_tokens', 'cache_write_input_tokens', 'cache_creation_input_tokens', 'cache_creation_tokens'),
+    'reasoning_tokens': ('reasoning_tokens', 'reasoning_output_tokens', 'output_tokens_details.reasoning_tokens', 'completion_tokens_details.reasoning_tokens'),
 }
 
 
