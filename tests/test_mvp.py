@@ -34,10 +34,15 @@ class Service(BaseHTTPRequestHandler):
             server.calls[self.path]=server.calls.get(self.path,0)+1
             count=server.calls[self.path]
             server.active+=1;server.peak=max(server.active,server.peak)
+            if self.path=='/concurrent' and server.active>=2:server.overlap.set()
             server.keys.append(self.headers.get('Idempotency-Key'))
             server.auth.append(self.headers.get('Authorization'))
         try:
-            if self.path in {'/slow','/concurrent'}:time.sleep(0.4 if self.path=='/slow' else 0.08)
+            if self.path=='/slow':time.sleep(0.4)
+            if self.path=='/concurrent':
+                # Explicitly hold one request until another arrives. An 80 ms sleep
+                # tested disk/scheduler speed rather than the runner's concurrency.
+                server.overlap.wait(timeout=5)
             if self.path=='/retry' and count==1:
                 self.send_response(503);self.end_headers();self.wfile.write(b'{"error":"temporary"}');return
             if self.path=='/judge/chat/completions':
@@ -99,8 +104,10 @@ class MVPTest(unittest.TestCase):
         self.assertEqual(run.usage['input_tokens'],5);self.assertEqual(run.cost,0.1)
         self.assertEqual(select({'a':[{'b':2}]},'$.a[0].b'),2)
     def test_concurrent_cases(self):
+        self.server.overlap=threading.Event()
         exp,_,_=self.setup_exp('/concurrent',n=8,config={'concurrency':3})
         asyncio.run(ExperimentRunner(self.store).run(exp['id']))
+        self.assertTrue(self.server.overlap.is_set())
         self.assertGreater(self.server.peak,1);self.assertLessEqual(self.server.peak,3)
         report=self.store.get_experiment(exp['id'])['summary']
         self.assertEqual(report['total_cases'],8);self.assertEqual(report['case_counts']['pass'],8)
