@@ -73,7 +73,7 @@ Docker 约束参考：https://docs.docker.com/reference/cli/docker/container/cre
 
 ## 数据升级、恢复与备份
 
-- schema v1 会自动增量迁移至 v2，保留既有项目、Trace、Case 和实验。升级前停止旧 API/Worker，备份数据库及其旁边的 artifacts 目录，再启动新版，不能混跑两个 schema 版本。
+- 0.2.2 将 schema v1/v2/v3 自动事务迁移至 v4，保留既有项目、Trace、Case、实验、评分和会话；旧评分器分别映射到独立稳定实体，不按同名合并。升级前停止旧 API/Worker，备份数据库及其旁边的 artifacts 目录，再统一启动新版，不能混跑不兼容的 schema 版本。会话与归档见 [第一步指南](step-1-backend.md)，版本与预检见 [当前接口约定](frontend-backend-contract.md)。
 - 停机备份最简单；运行中备份使用 SQLite backup API，避免仅拷贝 WAL 模式下的单个 .db。数据库元数据和工件文件必须一起备份。
 - API/Worker 使用同一 `LITEEVAL_DB`（或相同 --db 路径），工件默认位于数据库同目录 artifacts，临时工作目录位于 workspaces。
 - Worker 崩溃后重启，租约过期时自动接管未完成实验，保留 Run ID 和已完成结果。恢复会重新调用未提交结果的远端 Agent，Agent 需要幂等支持。

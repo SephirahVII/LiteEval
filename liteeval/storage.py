@@ -7,13 +7,11 @@ import sqlite3
 import uuid
 import time
 import secrets
-import csv
-import io
 from dataclasses import asdict
 from .migrations import migrate
 from .security import checked_url, validate_no_secrets, new_key, redact
 from .core import Event
-from .config import validate_agent, validate_evaluator, number
+from .config import validate_agent, validate_evaluator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -123,7 +121,7 @@ class Store:
 
     @staticmethod
     def required(db: sqlite3.Connection, table: str, id_: str) -> sqlite3.Row:
-        if table not in {"projects", "traces", "datasets", "cases", "agent_versions", "evaluator_revisions", "experiments", "runs", "artifacts", "api_keys"}:
+        if table not in {"projects", "traces", "datasets", "cases", "agent_versions", "evaluator_revisions", "experiments", "runs", "artifacts", "api_keys", "dataset_versions", "evaluators"}:
             raise ValueError("Invalid table")
         row = db.execute(f"SELECT * FROM {table} WHERE id=?", (id_,)).fetchone()
         if row is None:
@@ -138,10 +136,12 @@ class Store:
         return {"id": id_, "name": name}
 
     def create_dataset(self, project_id: str, name: str) -> dict:
+        if not isinstance(name, str) or not name.strip() or len(name) > 200:
+            raise ValueError('Dataset name required (max 200)')
         id_ = uid()
         with self.connect() as db:
             self.required(db, "projects", project_id)
-            db.execute("INSERT INTO datasets VALUES (?,?,?,?)", (id_, project_id, name, now()))
+            db.execute("INSERT INTO datasets (id,project_id,name,created_at) VALUES (?,?,?,?)", (id_, project_id, name, now()))
         return {"id": id_, "project_id": project_id, "name": name}
 
     def create_trace(self, project_id: str, input: dict, output: Any = None, events: list | None = None,
@@ -164,14 +164,17 @@ class Store:
 
     def add_case(self, dataset_id: str, input: dict, expected: Any = None, metadata: dict | None = None,
                  source_trace_id: str | None = None) -> dict:
+        self.validate_case(input, metadata)
         id_ = uid()
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             ds = self.required(db, "datasets", dataset_id)
+            self.active(ds)
             if source_trace_id and self.required(db, "traces", source_trace_id)["project_id"] != ds["project_id"]:
                 raise ValueError("Trace and dataset belong to different projects")
             content = {"id": id_, "revision": 1, "input": input, "expected": expected,
                        "metadata": metadata or {}, "source_trace_id": source_trace_id}
-            db.execute("INSERT INTO cases VALUES (?,?,?)", (id_, dataset_id, 1))
+            db.execute("INSERT INTO cases (id,dataset_id,revision) VALUES (?,?,?)", (id_, dataset_id, 1))
             db.execute("INSERT INTO case_revisions VALUES (?,?,?,?)", (id_, 1, encoded(content), digest(content)))
         return content
 
@@ -183,10 +186,18 @@ class Store:
         return self.add_case(dataset_id, trace["input"], expected, metadata, trace_id)
 
     def revise_case(self, case_id: str, input: dict, expected: Any = None,
-                    metadata: dict | None = None) -> dict:
+                    metadata: dict | None = None, base_revision: int | None = None) -> dict:
         """Create a new immutable revision; existing snapshots still use their frozen content."""
+        self.validate_case(input, metadata)
+        if base_revision is not None and (type(base_revision) is not int or base_revision < 1):
+            raise ValueError('base_revision must be a positive integer')
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             case = self.required(db, "cases", case_id)
+            self.active(case)
+            self.active(self.required(db, 'datasets', case['dataset_id']))
+            if base_revision is not None and case['revision'] != base_revision:
+                raise Conflict(f'Case changed; current revision is {case["revision"]}')
             current = json.loads(db.execute("SELECT content_json FROM case_revisions WHERE case_id=? AND revision=?",
                                             (case_id, case["revision"])).fetchone()[0])
             revision = case["revision"] + 1
@@ -214,34 +225,36 @@ class Store:
         return {"id": id_, "label": label}
 
     def add_evaluator(self, project_id: str, name: str, kind: str, config: dict) -> dict:
+        if not isinstance(name, str) or not name.strip() or len(name) > 200 or not isinstance(config, dict):
+            raise ValueError('Evaluator needs a name (max 200) and object config')
         validate_evaluator(kind,config)
         if kind not in {"exact_match", "contains", "regex", "json_schema", "tool_called", "tool_parameter", "latency", "cost", "file_exists", "file_content", "test_passed", "llm_judge"}:
             raise ValueError("Unsupported evaluator kind")
         id_ = uid()
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             self.required(db, "projects", project_id)
-            db.execute("INSERT INTO evaluator_revisions VALUES (?,?,?,?,?,?)",
-                       (id_, project_id, name, kind, encoded(config), digest([kind, config])))
-        return {"id": id_, "name": name, "kind": kind}
+            db.execute('INSERT INTO evaluators VALUES (?,?,?)', (id_, project_id, now()))
+            db.execute("INSERT INTO evaluator_revisions (id,project_id,name,kind,config_json,config_hash,evaluator_id,revision) VALUES (?,?,?,?,?,?,?,1)",
+                       (id_, project_id, name, kind, encoded(config), digest([kind, config]), id_))
+        return {"id": id_, "name": name, "kind": kind, 'evaluator_id': id_, 'revision': 1}
 
     def create_experiment(self, project_id: str, dataset_id: str, agent_version_id: str,
-                          evaluator_ids: list[str], config: dict | None = None, idempotency_key: str | None = None) -> dict:
-        if not evaluator_ids or len(set(evaluator_ids)) != len(evaluator_ids):
-            raise ValueError("Provide distinct evaluator IDs")
-        config = config or {}
-        if set(config)-{'concurrency','max_retries','judge_retries','retry_delay_seconds'}:raise ValueError('Unsupported Experiment configuration')
-        number(config.get('retry_delay_seconds',0.5),'retry_delay_seconds',0,30)
-        concurrency = config.get('concurrency', 4)
-        retries = config.get('max_retries', 0)
-        judge_retries = config.get('judge_retries', 1)
-        if type(concurrency) is not int or not 1 <= concurrency <= 32:
-            raise ValueError('concurrency must be 1..32')
-        if any(type(n) is not int or not 0 <= n <= 3 for n in (retries, judge_retries)):
-            raise ValueError('retries must be 0..3')
+                          evaluator_ids: list[str], config: dict | None = None, idempotency_key: str | None = None,
+                          dataset_version_id=None, name='', description='', diagnostic=False, preflight_hash=None) -> dict:
+        from . import catalog, planning
+        request = planning.normalize({'project_id': project_id, 'dataset_id': dataset_id, 'dataset_version_id': dataset_version_id,
+                                      'agent_version_id': agent_version_id, 'evaluator_ids': evaluator_ids, 'config': config,
+                                      'name': name, 'description': description, 'diagnostic': diagnostic, 'preflight_hash': preflight_hash})
+        config = request['config']
         if idempotency_key is not None and (not isinstance(idempotency_key, str) or not 1 <= len(idempotency_key) <= 200):
             raise ValueError('Invalid idempotency key')
-        request_hash = digest([project_id, dataset_id, agent_version_id, sorted(evaluator_ids), config])
-        id_, snapshot_id = uid(), uid()
+        request_parts = [project_id, dataset_id, agent_version_id, sorted(evaluator_ids), config]
+        if dataset_version_id or name or description or diagnostic or preflight_hash:
+            request_parts.append({'dataset_version_id': dataset_version_id, 'name': name, 'description': description,
+                                  'diagnostic': diagnostic, 'preflight_hash': preflight_hash})
+        request_hash = digest(request_parts)
+        id_ = uid()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if idempotency_key:
@@ -251,26 +264,24 @@ class Store:
                     if previous['request_hash'] != request_hash:
                         raise Conflict('Idempotency key already used with different configuration')
                     return {'id': previous['id'], 'status': previous['status'], 'reused': True}
-            ds, agent = self.required(db, "datasets", dataset_id), self.required(db, "agent_versions", agent_version_id)
-            if ds["project_id"] != project_id or agent["project_id"] != project_id:
-                raise ValueError("Dataset and agent must belong to project")
-            for eid in evaluator_ids:
-                if self.required(db, "evaluator_revisions", eid)["project_id"] != project_id:
-                    raise ValueError("Evaluator must belong to project")
-            rows = db.execute("SELECT c.id, c.revision, r.content_hash FROM cases c JOIN case_revisions r "
-                              "ON r.case_id=c.id AND r.revision=c.revision WHERE c.dataset_id=? ORDER BY c.id",
-                              (dataset_id,)).fetchall()
+            resolved = planning.resolve(db, self, request)
+            ds, version, rows, _, _, _ = resolved
             if not rows:
                 raise ValueError("Dataset has no cases")
-            frozen = [(r["id"], r["revision"], r["content_hash"]) for r in rows]
-            shash = digest(frozen)
-            db.execute("INSERT INTO dataset_snapshots VALUES (?,?,?,?)", (snapshot_id, dataset_id, shash, now()))
-            db.executemany("INSERT INTO snapshot_cases VALUES (?,?,?,?,?)",
-                           [(snapshot_id, *item, idx) for idx, item in enumerate(frozen)])
-            db.execute('INSERT INTO experiments (id,project_id,snapshot_id,agent_version_id,status,created_at,config_json,idempotency_key,request_hash) VALUES (?,?,?,?,?,?,?,?,?)',
-                       (id_, project_id, snapshot_id, agent_version_id, 'queued', now(), encoded(config), idempotency_key, request_hash))
+            if preflight_hash:
+                report = planning.report(db, self, request, resolved)
+                if preflight_hash != report['preflight_hash']:
+                    raise planning.StalePreflight(report)
+                if not report['submission_allowed']:
+                    raise planning.PreflightError(report)
+            shash = catalog.snapshot_hash(rows)
+            snapshot_id = version['snapshot_id'] if version else catalog.freeze(db, ds['id'], rows)
+            db.execute('INSERT INTO experiments (id,project_id,snapshot_id,agent_version_id,status,created_at,config_json,idempotency_key,request_hash,dataset_version_id,name,description,diagnostic) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (id_, project_id, snapshot_id, agent_version_id, 'queued', now(), encoded(config), idempotency_key, request_hash,
+                        dataset_version_id, name, description, int(diagnostic)))
             db.executemany("INSERT INTO experiment_evaluators VALUES (?,?)", [(id_, eid) for eid in evaluator_ids])
-        return {"id": id_, "status": "queued", "snapshot_hash": shash, "case_count": len(frozen)}
+        return {"id": id_, "status": "queued", "snapshot_hash": shash, "case_count": len(rows),
+                'dataset_version_id': dataset_version_id, 'diagnostic': diagnostic, 'name': name}
 
     def get_experiment(self, experiment_id: str) -> dict:
         with self.connect() as db:
@@ -278,7 +289,7 @@ class Store:
             runs = db.execute("SELECT * FROM runs WHERE experiment_id=? ORDER BY case_id", (experiment_id,)).fetchall()
             scores = db.execute("SELECT s.* FROM scores s JOIN runs r ON s.run_id=r.id WHERE r.experiment_id=?",
                                 (experiment_id,)).fetchall()
-            return {**dict(exp), "summary": self.summary_from_db(db, exp), "runs": [{**dict(r), "output": json.loads(r["output_json"]) if r["output_json"] else None}
+            return {**dict(exp), 'diagnostic': bool(exp['diagnostic']), "summary": self.summary_from_db(db, exp), "runs": [{**dict(r), "output": json.loads(r["output_json"]) if r["output_json"] else None}
                                             for r in runs], "scores": [dict(s) for s in scores]}
 
     def get_run(self, run_id: str) -> dict:
@@ -294,7 +305,7 @@ class Store:
         with self.connect() as db:
             return [dict(r) for r in db.execute('SELECT * FROM attempts WHERE run_id=? ORDER BY number',(run_id,))]
 
-    def list_items(self, table, project_id=None, limit=50, offset=0, filters=None):
+    def list_items(self, table, project_id=None, limit=50, offset=0, filters=None, archived='exclude', latest=False):
         allowed = {'projects', 'datasets', 'traces', 'agent_versions', 'evaluator_revisions', 'experiments', 'artifacts'}
         if table not in allowed:
             raise ValueError('Invalid resource')
@@ -302,6 +313,11 @@ class Store:
         if not 1 <= limit <= 200 or offset < 0:
             raise ValueError('Pagination limit must be 1..200; offset >= 0')
         clauses, values = [], []
+        self.archive_filter(clauses, archived, table in {'datasets', 'evaluator_revisions'})
+        if latest:
+            if table != 'evaluator_revisions':
+                raise ValueError('latest is available only for evaluators')
+            clauses.append('revision=(SELECT MAX(e.revision) FROM evaluator_revisions e WHERE e.evaluator_id=evaluator_revisions.evaluator_id)')
         if project_id:
             clauses.append('id=?' if table == 'projects' else 'project_id=?')
             values.append(project_id)
@@ -318,57 +334,104 @@ class Store:
         with self.connect() as db:
             total = db.execute(f'SELECT COUNT(*) FROM {table}{where}', values).fetchone()[0]
             rows = db.execute(f'SELECT * FROM {table}{where} ORDER BY id LIMIT ? OFFSET ?', values+[limit,offset]).fetchall()
-        return {'items': [dict(r) for r in rows], 'total': total, 'limit': limit, 'offset': offset}
+        items = [dict(r) for r in rows]
+        if table == 'experiments':
+            for item in items:item['diagnostic'] = bool(item['diagnostic'])
+        return {'items': items, 'total': total, 'limit': limit, 'offset': offset}
 
-    def list_cases(self, dataset_id, limit=50, offset=0, category=None, severity=None):
+    def list_cases(self, dataset_id, limit=50, offset=0, category=None, severity=None, archived='exclude'):
         limit, offset = int(limit), int(offset)
         if not 1 <= limit <= 200 or offset < 0:
             raise ValueError('Invalid pagination')
         with self.connect() as db:
             self.required(db, 'datasets', dataset_id)
             conditions, values = ['c.dataset_id=?'], [dataset_id]
+            self.archive_filter(conditions, archived, True, 'c.')
             for name, value in [('category',category), ('severity',severity)]:
                 if value is not None:
                     conditions.append(f"json_extract(r.content_json,'$.metadata.{name}')=?")
                     values.append(value)
             sql = ' FROM cases c JOIN case_revisions r ON r.case_id=c.id AND r.revision=c.revision WHERE '+ ' AND '.join(conditions)
             total = db.execute('SELECT COUNT(*)'+sql, values).fetchone()[0]
-            rows = db.execute('SELECT r.content_json'+sql+' ORDER BY c.id LIMIT ? OFFSET ?', values+[limit,offset])
-            return {'items': [json.loads(r[0]) for r in rows], 'total': total, 'limit': limit, 'offset': offset}
+            rows = db.execute('SELECT r.content_json,c.archived_at'+sql+' ORDER BY c.id LIMIT ? OFFSET ?', values+[limit,offset])
+            return {'items': [{**json.loads(r[0]), 'archived_at': r[1]} for r in rows], 'total': total, 'limit': limit, 'offset': offset}
 
     def import_cases(self, dataset_id, records=None, csv_text=None):
-        if (records is None) == (csv_text is None):
-            raise ValueError('Provide records or csv_text')
-        if csv_text is not None:
-            records = []
-            for row in csv.DictReader(io.StringIO(csv_text)):
-                records.append({'input': json.loads(row['input']),
-                                'expected': json.loads(row['expected']) if row.get('expected') else None,
-                                'metadata': json.loads(row['metadata']) if row.get('metadata') else {}})
-        if not isinstance(records, list) or not 1 <= len(records) <= 10000:
-            raise ValueError('Import expects 1..10000 records')
-        # Validate the complete batch before opening a transaction; a bad record imports nothing.
-        for row in records:
-            if not isinstance(row, dict) or not isinstance(row.get('input'), dict) or not isinstance(row.get('metadata', {}), dict):
-                raise ValueError('Each record needs object input and metadata')
+        from .imports import validate_batch, BatchValidationError
+        records, report = validate_batch(self.validate_case, records, csv_text)
+        if not report['valid']:
+            raise BatchValidationError(report)
         created = []
         with self.connect() as db:
-            self.required(db, 'datasets', dataset_id)
+            db.execute('BEGIN IMMEDIATE')
+            self.active(self.required(db, 'datasets', dataset_id))
             for row in records:
                 id_ = uid()
                 content = {'id': id_, 'revision': 1, 'input': row['input'],
                            'expected': row.get('expected', row.get('expected_output')), 'metadata': row.get('metadata', {}),
                            'source_trace_id': None}
-                db.execute('INSERT INTO cases VALUES (?,?,?)', (id_,dataset_id,1))
+                db.execute('INSERT INTO cases (id,dataset_id,revision) VALUES (?,?,?)', (id_,dataset_id,1))
                 db.execute('INSERT INTO case_revisions VALUES (?,?,?,?)', (id_,1,encoded(content),digest(content)))
                 created.append(id_)
         return {'imported': len(created), 'case_ids': created}
 
-    def export_cases(self, dataset_id):
+    def export_cases(self, dataset_id, archived='exclude'):
         with self.connect() as db:
             self.required(db, 'datasets', dataset_id)
-            rows = db.execute('SELECT r.content_json FROM cases c JOIN case_revisions r ON c.id=r.case_id AND c.revision=r.revision WHERE c.dataset_id=? ORDER BY c.id', (dataset_id,))
+            clauses = ['c.dataset_id=?']
+            self.archive_filter(clauses, archived, True, 'c.')
+            rows = db.execute('SELECT r.content_json FROM cases c JOIN case_revisions r ON c.id=r.case_id AND c.revision=r.revision WHERE '+ ' AND '.join(clauses)+' ORDER BY c.id', (dataset_id,))
             return {'records': [json.loads(r[0]) for r in rows]}
+
+    @staticmethod
+    def active(row):
+        if row['archived_at'] is not None:
+            raise Conflict('Resource is archived; restore it before changing or selecting it')
+
+    @staticmethod
+    def archive_filter(clauses, archived, supported, prefix=''):
+        if archived not in {'exclude', 'include', 'only'}:
+            raise ValueError('archived must be exclude, include or only')
+        if supported and archived != 'include':
+            clauses.append(prefix+'archived_at IS '+('NOT NULL' if archived == 'only' else 'NULL'))
+
+    @staticmethod
+    def validate_case(input, metadata):
+        if not isinstance(input, dict) or metadata is not None and not isinstance(metadata, dict):
+            raise ValueError('Case input and metadata must be objects')
+        meta = metadata or {}
+        if 'critical' in meta and type(meta['critical']) is not bool:
+            raise ValueError('metadata.critical must be boolean')
+        if 'priority' in meta and meta['priority'] not in ('high', 'normal', 'low'):
+            raise ValueError('metadata.priority must be high, normal or low')
+        if 'title' in meta and (not isinstance(meta['title'], str) or len(meta['title']) > 120):
+            raise ValueError('metadata.title must be a string of at most 120 characters')
+        if 'tags' in meta and (not isinstance(meta['tags'], list) or len(meta['tags']) > 20 or
+                              not all(isinstance(t, str) and 1 <= len(t) <= 32 for t in meta['tags'])):
+            raise ValueError('metadata.tags must contain at most 20 strings of length 1..32')
+
+    def update_resource(self, table, resource_id, changes):
+        if table not in {'datasets', 'cases', 'evaluator_revisions'}:
+            raise ValueError('Unsupported editable resource')
+        allowed = {'name', 'description', 'archived'} if table == 'datasets' else {'archived'}
+        if not isinstance(changes, dict) or not changes or set(changes) - allowed:
+            raise ValueError('Unsupported or empty update')
+        values = {}
+        if 'archived' in changes:
+            if type(changes['archived']) is not bool:
+                raise ValueError('archived must be boolean')
+            values['archived_at'] = now() if changes['archived'] else None
+        for field in ('name', 'description'):
+            if field in changes:
+                value = changes[field]
+                if not isinstance(value, str) or len(value) > (200 if field == 'name' else 2000) or field == 'name' and not value.strip():
+                    raise ValueError(f'Invalid {field}')
+                values[field] = value
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            self.required(db, table, resource_id)
+            db.execute(f'UPDATE {table} SET '+','.join(f'{key}=?' for key in values)+' WHERE id=?', [*values.values(), resource_id])
+            return dict(self.required(db, table, resource_id))
 
     def issue_key(self, project_id, label='client'):
         token, hashed = new_key(); id_ = uid()
@@ -498,11 +561,13 @@ class Store:
         """Reuse the original immutable snapshot even if the live Dataset changed."""
         id_ = uid()
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             exp = self.required(db,'experiments',experiment_id)
             agent_id=agent_version_id or exp['agent_version_id']
             if self.required(db,'agent_versions',agent_id)['project_id']!=exp['project_id']:
                 raise ValueError('Agent belongs to a different project')
-            db.execute('INSERT INTO experiments (id,project_id,snapshot_id,agent_version_id,status,created_at,config_json) VALUES (?,?,?,?,?,?,?)',
-                       (id_,exp['project_id'],exp['snapshot_id'],agent_id,'queued',now(),exp['config_json']))
+            db.execute('INSERT INTO experiments (id,project_id,snapshot_id,agent_version_id,status,created_at,config_json,dataset_version_id,name,description,diagnostic) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                       (id_,exp['project_id'],exp['snapshot_id'],agent_id,'queued',now(),exp['config_json'],
+                        exp['dataset_version_id'],exp['name'],exp['description'],exp['diagnostic']))
             db.execute('INSERT INTO experiment_evaluators SELECT ?,evaluator_revision_id FROM experiment_evaluators WHERE experiment_id=?',(id_,experiment_id))
         return {'id':id_,'status':'queued','source_experiment_id':experiment_id}

@@ -1,5 +1,11 @@
 # 后端架构与结果口径
 
+0.2.2 新增 catalog（评分器修订/数据集命名版本）、imports（预览与正式导入共享校验）、planning（无外部调用的预检）和 runtime（Worker 上报）。数据库 schema 4；事件契约仍为 v2。预检与创建在同一事务核对快照摘要，发布版本复用不可变快照，旧幂等请求重试仍优先返回原实验。Worker 就绪信息不参与执行摘要，且仅为提示，不构成定向调度保证。接口约定见 [前端对接文档](frontend-backend-contract.md)。
+
+0.2.1 在原评测核心之外增加 `sessions`（Owner 会话、Origin/CSRF 与撤销）、`web_queries`（轻量进度与分页结果）和 `previews`（独立持久评分预览）。数据库 schema 为 3，Event/ContentPart 契约仍为 v2。会话与预览不改变正式实验的 Score、快照和 Compare 语义。
+
+Dataset/Case/Evaluator 归档不删除历史引用；新实验排除归档项，rerun 保留原快照。Case 修订通过 BEGIN IMMEDIATE 与 base_revision 校验避免并发覆盖；旧客户端省略该字段仍兼容。预览 Worker 采用独立租约、心跳与写入校验，恢复可能再次调用 Judge，原始回复以独立工件保存。具体边界和操作见 [第一步指南](step-1-backend.md)。
+
 ## 模块分工
 
 | 模块 | 职责 |

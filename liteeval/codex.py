@@ -1,6 +1,7 @@
 """Codex exec --json adapter. Raw JSONL survives parser updates."""
 import json
 import os
+import sys
 import time
 from dataclasses import asdict
 from .core import AgentRun,ContentPart,Event
@@ -53,7 +54,8 @@ class CodexAdapter:
             executable=os.getenv('LITEEVAL_CODEX_BINARY','codex')
             if self.config.get('environment',{}).get('type')=='docker':executable='codex'
             # Codex's own sandbox remains active; never silently disable it.
-            args=[executable,'exec','--json','--sandbox','workspace-write','--skip-git-repo-check']
+            launcher=[sys.executable,executable] if executable.lower().endswith('.py') else [executable]
+            args=launcher+['exec','--json','--sandbox','workspace-write','--skip-git-repo-check']
             if self.config.get('model'):args+=['--model',self.config['model']]
             if self.config.get('reasoning_effort'):
                 effort=self.config['reasoning_effort']

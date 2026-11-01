@@ -24,6 +24,7 @@ from liteeval.runner import ExperimentRunner
 from liteeval.reports import compare
 from liteeval.sdk import TraceClient
 from liteeval.storage import Store,Conflict,LeaseLost,SCHEMA
+from liteeval.migrations import SCHEMA_VERSION
 
 class Service(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -49,7 +50,7 @@ class Service(BaseHTTPRequestHandler):
             else:payload={'answer':'ok'}
             body=json.dumps(payload).encode();self.send_response(200);self.send_header('Content-Length',str(len(body)));self.end_headers()
             try:self.wfile.write(body)
-            except (BrokenPipeError,ConnectionResetError):pass
+            except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):pass
         finally:
             with server.lock:server.active-=1
     def log_message(self,*args):pass
@@ -221,7 +222,7 @@ class MVPTest(unittest.TestCase):
         self.assertEqual(parsed['usage']['input_tokens'],12);self.assertFalse(parsed['partial'])
         self.assertTrue(parse_jsonl('garbled')['partial'])
     def test_codex_adapter_fixture_end_to_end_final_state(self):
-        fixture=Path(self.tmp.name)/'fake-codex'
+        fixture=Path(self.tmp.name)/'fake-codex.py'
         fixture.write_text('#!/usr/bin/env python3\nimport json,sys\nfrom pathlib import Path\nsys.stdin.read()\nPath("answer.txt").write_text("42")\nprint(json.dumps({"type":"item.completed","item":{"id":"m","type":"agent_message","text":"done"}}))\nprint(json.dumps({"type":"turn.completed","usage":{"input_tokens":10,"output_tokens":2}}))\n')
         fixture.chmod(0o755)
         checks=[self.store.add_evaluator(self.pid,'File','file_content',{'path':'answer.txt','expected':'42'})['id'],self.store.add_evaluator(self.pid,'Test','test_passed',{'test_name':'check'})['id']]
@@ -251,7 +252,7 @@ class MVPTest(unittest.TestCase):
         db=sqlite3.connect(path);db.executescript(SCHEMA);db.execute('INSERT INTO projects VALUES (?,?,?)',('old','Legacy','now'));db.commit();db.close()
         migrated=Store(path)
         self.assertEqual(migrated.list_items('projects')['items'][0]['name'],'Legacy')
-        with migrated.connect() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],2)
+        with migrated.connect() as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
     def test_artifact_integrity(self):
         id_=self.store.save_artifact(self.pid,None,'test',{'authorization':'secret','value':1})
         meta,data=self.store.read_artifact(id_);self.assertEqual(json.loads(data)['authorization'],'[REDACTED]')
@@ -299,11 +300,17 @@ class MVPTest(unittest.TestCase):
         result=asyncio.run(run_process(['python','-u','-c','import time; print("partial"); time.sleep(5)'],timeout=0.1))
         self.assertTrue(result['timed_out']);self.assertIn('partial',result['stdout'])
 
-    def test_snapshot_refuses_symlink_parent_and_large_files(self):
+    def test_snapshot_refuses_symlink_parent(self):
         root=Path(self.tmp.name)/'snapshot';root.mkdir()
         outside=Path(self.tmp.name)/'outside';outside.mkdir();(outside/'secret').write_text('outside')
-        (root/'link').symlink_to(outside,target_is_directory=True)
+        try:(root/'link').symlink_to(outside,target_is_directory=True)
+        except OSError as exc:
+            if os.name=='nt' and getattr(exc,'winerror',None)==1314:
+                self.skipTest('Windows symlink privilege unavailable; Linux CI must exercise this guard')
+            raise
         with self.assertRaises((OSError,ValueError)):snapshot_bytes(root,'link/secret')
+    def test_snapshot_refuses_large_files(self):
+        root=Path(self.tmp.name)/'snapshot';root.mkdir()
         (root/'big').write_text('12345')
         with self.assertRaises(ValueError):snapshot_bytes(root,'big',limit=4)
 

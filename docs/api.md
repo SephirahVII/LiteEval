@@ -1,6 +1,44 @@
 # API 与配置
 
-基础地址 `http://127.0.0.1:8765`。请求为 JSON 对象，最大 8 MB。除 health 外必须附 `Authorization: Bearer TOKEN`。通用失败：400 参数错误、401 未认证、403 权限错误、404 不存在、409 幂等冲突、500 内部错误。
+当前版本 0.2.2，数据库 schema 4。新增导入预览、评分器修订、数据集版本、实验预检和 Worker 状态；完整请求、响应及前端同源代理配置见 [前端后端接口约定](frontend-backend-contract.md)。下方 0.2.1 章节保留作为会话与归档接口说明。
+
+## 0.2.2 新增接口
+
+| 方法与路径 | 请求/作用 |
+| --- | --- |
+| POST /v1/datasets/{id}/import-preview | 与 import 相同的 records/csv_text；返回逐行错误，不入库 |
+| GET /v1/evaluators?latest=true | 每个稳定 evaluator_id 的最高修订，保留原分页结构 |
+| GET/POST /v1/evaluators/{revision_id}/revisions | 修订历史；管理员用 config、base_revision、可选 name 创建新修订 |
+| GET/POST /v1/datasets/{id}/versions | 命名不可变快照；name 在同一 Dataset 内唯一 |
+| GET /v1/dataset-versions/{id} | 版本详情、hash 和 Case 数 |
+| GET /v1/dataset-versions/{id}/cases | 冻结 Case 分页 |
+| POST /v1/experiments/preflight | 静态证据/配置校验、调用上限和 Worker 状态；不调用外部服务 |
+| GET /v1/runtime/status | 管理员读取 Worker 心跳、能力、引用凭据状态和队列摘要 |
+
+新建实验支持 dataset_version_id（与 dataset_id 互斥）、name、description、diagnostic、preflight_hash。新前端携带哈希时，过期返回 409/stale_preflight，必需证据不足返回 400/preflight_failed；旧客户端不带哈希仍兼容。实验始终绑定评分器修订 id，而不是稳定 evaluator_id。
+
+基础地址 `http://127.0.0.1:8765`。请求为 JSON 对象，最大 8 MB。除 health 和会话登录外需要 Bearer Token 或浏览器会话；Cookie 写请求还要求匹配 Origin 和 X-CSRF-Token。通用失败：400 参数错误、401 未认证、403 权限错误、404 不存在、409 幂等/修订/预检冲突、500 内部错误。当前数据库 schema 为 4，事件 schema 仍为 2。
+
+## 0.2.1 新增接口
+
+| 方法与路径 | 请求/作用 |
+| --- | --- |
+| POST /v1/auth/session | `{username,password}` 加同源 Origin；返回 HttpOnly Cookie 与 csrf_token，失败登录限速 |
+| GET /v1/auth/me | 当前身份；会话模式可读取 csrf_token |
+| DELETE /v1/auth/session | 带 Cookie/Origin/CSRF，撤销会话 |
+| GET /v1/experiments/{id}/progress | 状态与计数，不返回输出与全部评分 |
+| GET /v1/experiments/{id}/runs | limit/offset、status/outcome 筛选；默认不返回 output，include_output=true 可启用 |
+| PATCH /v1/datasets/{id} | `{name?,description?,archived?}`，至少一个字段 |
+| PATCH /v1/cases/{id} | `{archived:bool}` |
+| PATCH /v1/evaluators/{id} | 管理员，`{archived:bool}` |
+| POST /v1/evaluator-previews | 管理员，`{project_id,evaluator_id,run_id}` 或 `{project_id,evaluator_id,case,run}`；202 返回任务 ID |
+| GET /v1/evaluator-previews/{id} | 经项目鉴权读取预览状态/结果，不暴露任务 payload |
+
+Dataset、Evaluator 和 Case 列表/导出新增 `archived=exclude|include|only`，默认 exclude。新实验仅冻结未归档 Case，不接受归档 Dataset/Evaluator；历史快照和 rerun 不受归档影响。
+
+Case 修订新增 `base_revision`，不匹配返回 409。旧客户端省略该字段仍兼容，响应 Warning 提示升级。Dataset 导出支持 `format=csv`，默认 JSON；CSV 带 UTF-8 BOM，导入支持带 BOM 文件。
+
+评分预览由 Worker 执行，使用不可变配置和冻结样本，既不调用 Agent 也不修改正式 Score。LLM Judge 会消耗额度并保存每次原始回复，错误时最多额外重试一次。完整字段、会话安全、启动和 PowerShell 示例见 [第一步操作指南](step-1-backend.md)。
 
 ## 接口
 

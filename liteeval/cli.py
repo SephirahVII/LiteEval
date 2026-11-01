@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import json
 import os
+import getpass
 from pathlib import Path
 from .api import serve
 from .runner import ExperimentRunner
@@ -10,6 +11,9 @@ from .reports import compare
 from .storage import Store
 from .core import EvalCase,AgentRun
 from .evaluators import ConfiguredEvaluator
+from .sessions import BrowserSessions
+from .previews import PreviewRunner
+from .runtime import WorkerRegistry
 
 def main():
     parser=argparse.ArgumentParser(description='LiteEval backend MVP')
@@ -22,8 +26,14 @@ def main():
     key=sub.add_parser('key');key.add_argument('project_id');key.add_argument('--label',default='client')
     cancel=sub.add_parser('cancel');cancel.add_argument('experiment_id')
     judge=sub.add_parser('judge-check');judge.add_argument('config_file')
+    owner=sub.add_parser('owner-init');owner.add_argument('--username',default='owner')
     args=parser.parse_args();store=Store(args.db)
-    if args.command=='api':serve(store,port=args.port)
+    if args.command=='owner-init':
+        password=getpass.getpass('Owner password (12+ characters): ')
+        if password!=getpass.getpass('Confirm password: '):raise SystemExit('Passwords do not match')
+        BrowserSessions(store).configure_owner(args.username,password)
+        print('Owner configured. Existing browser sessions revoked.')
+    elif args.command=='api':serve(store,port=args.port)
     elif args.command=='run':print(json.dumps({'claimed':asyncio.run(ExperimentRunner(store).run(args.experiment_id))}))
     elif args.command=='compare':print(json.dumps(compare(store,args.left,args.right),ensure_ascii=False,indent=2))
     elif args.command=='key':print(json.dumps(store.issue_key(args.project_id,args.label)))
@@ -37,13 +47,27 @@ def main():
     else:
         async def work():
             runner=ExperimentRunner(store)
-            while True:
-                try:job=await runner.run_next()
-                except Exception as exc:
-                    from .security import safe_error
-                    print(safe_error(exc),flush=True);job=None
-                if args.once:print(json.dumps({'experiment_id':job}));return
-                if not job:await asyncio.sleep(0.5)
+            preview_runner=PreviewRunner(store)
+            registry=WorkerRegistry(store)
+            registry.heartbeat()
+            monitor=asyncio.create_task(registry.monitor())
+            try:
+                while True:
+                    job=None;preview=None
+                    try:
+                        job=await runner.run_next()
+                        # Service both queues between experiments; --once retains its one-job behavior.
+                        if not args.once or not job:preview=await preview_runner.run_next()
+                    except Exception as exc:
+                        from .security import safe_error
+                        print(safe_error(exc),flush=True);job=None
+                    if monitor.done():monitor.result()
+                    if args.once:print(json.dumps({'experiment_id':job,'preview_id':preview}));return
+                    if not job and not preview:await asyncio.sleep(0.5)
+            finally:
+                monitor.cancel()
+                await asyncio.gather(monitor,return_exceptions=True)
+                registry.stop()
         try:asyncio.run(work())
         except KeyboardInterrupt:pass
 

@@ -1,8 +1,12 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.2.0**，使用 Python 3.11+ 标准库、SQLite 和本地工件目录，不包含前端。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.2.2**，使用 Python 3.11+ 标准库、SQLite 和本地工件目录，不包含前端。
 
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
+
+0.2.1 已补齐第一步的后端准备：浏览器 Owner 会话与 CSRF、轻量实验进度、分页结果、Dataset/Case/Evaluator 归档、Case 编辑冲突检查、独立 Worker 评分预览及 CSV 导出。数据库自动增量迁移至 schema 3；原有 API Key、CLI、SDK 和评测闭环继续支持。完整启动与 PowerShell 操作见 [第一步操作指南](docs/step-1-backend.md)。
+
+0.2.2 进一步增加导入预览、评分器修订历史、命名数据集版本、实验预检哈希和 Worker 就绪上报，数据库升级到 schema 4。前端原型可按 [接口约定](docs/frontend-backend-contract.md) 对接；已有数据库升级前停止 API/Worker 并备份，再统一启动新版。预检不调用外部服务，Worker 状态是提示信息，尚未实现上线 Gate。
 
 ## 当前能力
 
@@ -18,12 +22,16 @@ LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.2.0**，
 
 ```bash
 python examples/run_demo.py
+python examples/run_readiness_demo.py
+python examples/run_catalog_demo.py
 python -m unittest discover -s tests -v
 ```
 
 Demo 自动启动本地 API 和两个示例 Agent，执行 Trace 转 Case、批量导入、实验与比较，然后关闭服务。预期输出：v1 通过率 0.5，v2 通过率 1.0，1 个 Case 改善、1 个不变。完整结果写入 `data/demo/report.json`。
 
 ## 启动常驻服务
+
+浏览器 Owner 模式可先执行 `python -m liteeval.cli owner-init` 交互设置密码，再执行下面的 API/Worker 命令。API Key 管理员模式仍按下述环境变量启动。Owner 登录接口与会话用法见 [第一步操作指南](docs/step-1-backend.md)；Web 页面将在下一步实现。
 
 生成管理员密钥，只在本机保存：
 

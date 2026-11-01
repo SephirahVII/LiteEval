@@ -8,7 +8,9 @@ def number(value,name,low,high):
         raise ValueError(f'{name} must be {low}..{high}')
 
 def validate_agent(config):
+    if not isinstance(config, dict):raise ValueError('Agent config must be an object')
     validate_no_secrets(config)
+    validate_credential_refs(config)
     number(config.get('timeout_seconds',30),'timeout_seconds',0.05,3600)
     if config.get('type')=='http':
         checked_url(config.get('endpoint',''))
@@ -31,7 +33,9 @@ def validate_agent(config):
         number(test.get('timeout_seconds',30),'test timeout',0.05,120)
 
 def validate_evaluator(kind,config):
+    if not isinstance(config, dict):raise ValueError('Evaluator config must be an object')
     validate_no_secrets(config)
+    validate_credential_refs(config)
     needs={'regex':['pattern'],'json_schema':['schema'],'tool_called':['tool_name'],'tool_parameter':['tool_name'],
            'latency':['max_ms'],'cost':['max_cost','currency'],'file_exists':['path'],'file_content':['path'],
            'test_passed':['test_name'],'llm_judge':['base_url','model','rubric']}
@@ -55,3 +59,14 @@ def validate_evaluator(kind,config):
         relative_path(config['path'])
     if kind=='latency':number(config['max_ms'],'max_ms',0,3600000)
     if kind=='cost':number(config['max_cost'],'max_cost',0,1000000)
+
+
+def validate_credential_refs(config):
+    refs = []
+    if config.get('api_key_env') is not None:refs.append(config['api_key_env'])
+    if config.get('auth') is not None:
+        if not isinstance(config['auth'], dict):raise ValueError('auth must be an object')
+        if 'token_env' in config['auth']:refs.append(config['auth']['token_env'])
+    for ref in refs:
+        if not isinstance(ref, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,100}', ref):
+            raise ValueError('Credentials must use valid environment variable names')
