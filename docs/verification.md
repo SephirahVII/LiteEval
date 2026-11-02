@@ -22,7 +22,7 @@
 
 ## 完整 API Demo
 
-命令：`python examples/run_demo.py`
+命令：`python -m examples.platform smoke`
 
 通过真实本地 HTTP 请求创建项目、录入生产 Trace、转 Case、批量导入、配置两个示例 Agent、创建实验、运行 Worker，再通过 API Compare。
 
@@ -30,7 +30,7 @@
 
 ## 千条 Case 本地容量检查
 
-命令：`python examples/load_check.py --cases 1000 --concurrency 8`
+命令：`python -m examples.platform load --cases 1000 --concurrency 8`
 
 本次 import → freeze → HTTP Agent → 规则评分 → 汇总共 **5.909 秒**；1000 个 Run succeeded，success_rate=1.0。数据库和工件使用独立临时目录，检查结束删除；摘要保存在 `data/load-check.json`。
 

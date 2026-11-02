@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "liteeval-local"
-version = "0.4.1"
+version = "0.4.2"
 description = "Local-first Agent regression evaluation backend"
 requires-python = ">=3.11"
 dependencies = ["cryptography>=42"]

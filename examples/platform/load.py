@@ -9,7 +9,7 @@ import sys
 import tempfile
 import threading
 import time
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from liteeval.infrastructure.persistence.store import Store
 from liteeval.application.dataset_runner import ExperimentRunner
 

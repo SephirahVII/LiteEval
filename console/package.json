@@ -4,6 +4,7 @@
   "private": true,
   "description": "LiteEval 控制台前端原型（静态演示，Mock 数据）",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node --test *.test.js"
   }
 }

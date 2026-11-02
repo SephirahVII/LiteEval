@@ -14,10 +14,10 @@
 
 ## 真实 Judge 联调
 
-修改 `examples/judge_config.json` 中 base_url、model、rubric，再将 api_key_env 对应凭据配置到 Worker 环境。可在本机保留独立配置文件，避免提交私密服务信息。运行：
+修改 `examples/config/judge.json` 中 base_url、model、rubric，再将 api_key_env 对应凭据配置到 Worker 环境。可在本机保留独立配置文件，避免提交私密服务信息。运行：
 
 ```bash
-python -m liteeval.interfaces.cli.main judge-check examples/judge_config.json
+python -m liteeval.interfaces.cli.main judge-check examples/config/judge.json
 ```
 
 先确认结构化评分成功、模型名正确、供应商参数兼容，再将相同配置注册为 llm_judge。用少量人工标注样本验证评分尺度、阈值与理由，之后加入实际实验。失败的 Judge 不重跑 Agent，而是独立重试；每次返回的原始回复单独留档。

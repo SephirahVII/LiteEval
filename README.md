@@ -1,6 +1,6 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.1**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.2**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography。另附尚未接通后端的 [控制台交互原型](console/README.md)。首次运行先执行 `python -m pip install -e .`。
 
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
@@ -13,16 +13,16 @@ LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.1**，
 后端已按 domain、ports、application、integrations、infrastructure、interfaces 分层；旧 Python 模块路径已删除，没有兼容转发层。新目录链路使用 Ground Truth、固定资源发布、独立 Agent/Evaluation Harness、真实文件采集和隔离评分。数据库 schema 6。
 
 ```bash
-python examples/run_native_benchmark.py
+python -m examples.native_benchmark
 ```
 
 这会运行两道离线计算题，产生实际子进程日志、JSON/Markdown/二进制产物、评分、重评记录与 ZIP。它是确定性程序的执行验收，模型调用数为 0，不是 LLM 或官方 FAB 成绩。配置和真实能力边界见 [目录 Benchmark 操作指南](docs/benchmark-packages.md)，新架构见 [架构说明](docs/architecture.md)。
 
 ## 数据与连接能力
 
-0.4.1 将固定来源的 FAB v2 公开集转换为原生目录包：27 题、239 条逐项 rubric、原始 severity/must-pass、研究能力预检及 Partial Credit/All-Pass。`python examples/prepare_fab_package.py` 仅准备题库；新增 `liteeval.qianwen-research/v1` 使用明确保存的 API 连接进行云端检索、提取和计算，通过显式提交工具生成真实文件。已用用户配置的千问平台 Key 对公开第 3、4 题完成 Qwen/GLM 共四次研究和双 Judge 诊断，未使用 Codex 登录。结果及解析修复见 [真实试跑报告](docs/fab-qianwen-trial.md)，接入步骤见 [原生 FAB 指南](docs/fab-v2-native.md)。
+0.4.1 将固定来源的 FAB v2 公开集转换为原生目录包：27 题、239 条逐项 rubric、原始 severity/must-pass、研究能力预检及 Partial Credit/All-Pass。`python -m examples.fab_v2 prepare` 仅准备题库；新增 `liteeval.qianwen-research/v1` 使用明确保存的 API 连接进行云端检索、提取和计算，通过显式提交工具生成真实文件。已用用户配置的千问平台 Key 对公开第 3、4 题完成 Qwen/GLM 共四次研究和双 Judge 诊断，未使用 Codex 登录。结果及解析修复见 [真实试跑报告](docs/fab-qianwen-trial.md)，接入步骤见 [原生 FAB 指南](docs/fab-v2-native.md)。
 
-0.3.1 新增 Finance Agent v2 官方公开集的固定来源导入与真实模型试跑脚本：27 题、9 类、保留原始 rubric/权重/must-pass，导入后发布不可变版本。可先只准备题库，再运行小规模诊断与导出。方法、运行步骤和实际结果见 [FAB v2 接入与试跑报告](docs/finance-agent-v2.md)。
+FAB 两种接入、历史实现归属及示例入口统一见 [Benchmark 索引](benchmarks/README.md) 和 [示例索引](examples/README.md)。旧 Dataset/Codex FAB 路径已删除。
 
 0.3.0 新增项目级模型连接与 API Key 加密保存，可供 HTTP Agent、直接模型调用和 LLM Judge 使用；新增运行中本地日志的游标查询、Target/Judge/重试用量记录，以及实验或单条 Run 的 JSON/JSONL/CSV/ZIP 导出。数据库升级到 schema 5。完整配置、请求示例、统计口径和边界见 [连接与 Rollout 操作指南](docs/connections-and-rollouts.md)。User Agent 暂不纳入本轮。
 
@@ -37,9 +37,9 @@ python examples/run_native_benchmark.py
 ## 一键体验
 
 ```bash
-python examples/run_demo.py
-python examples/run_readiness_demo.py
-python examples/run_catalog_demo.py
+python -m examples.platform smoke
+python -m examples.platform readiness
+python -m examples.platform catalog
 python -m unittest discover -s tests -v
 ```
 
@@ -83,7 +83,7 @@ python -m liteeval.interfaces.cli.main run EXPERIMENT_ID
 python -m liteeval.interfaces.cli.main cancel EXPERIMENT_ID
 python -m liteeval.interfaces.cli.main compare LEFT_ID RIGHT_ID
 python -m liteeval.interfaces.cli.main key PROJECT_ID --label sdk
-python -m liteeval.interfaces.cli.main judge-check examples/judge_config.json
+python -m liteeval.interfaces.cli.main judge-check examples/config/judge.json
 ```
 
 `--db` 位于子命令之前；也可以使用 `LITEEVAL_DB`。`judge-check` 会请求配置指定的真实服务并消耗其额度，先修改示例中的供应商地址和模型名。

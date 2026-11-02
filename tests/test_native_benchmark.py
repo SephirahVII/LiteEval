@@ -26,8 +26,8 @@ class NativeBenchmarkTest(unittest.IsolatedAsyncioTestCase):
         self.service = benchmark_service(self.store)
         self.package = self.root / 'bench'
         self.harness = self.root / 'harness'
-        shutil.copytree(ROOT / 'benchmarks/native_finance', self.package)
-        shutil.copytree(ROOT / 'harnesses/finance_command', self.harness)
+        shutil.copytree(ROOT / 'examples/native_benchmark/benchmark', self.package)
+        shutil.copytree(ROOT / 'examples/native_benchmark/harnesses/agent', self.harness)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -147,7 +147,7 @@ class NativeBenchmarkTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError): self.publish()
 
     async def test_custom_evaluation_harness_replaces_native_checks(self):
-        spec, sha = load_harness(ROOT / 'harnesses/finance_evaluator', self.service.blobs)
+        spec, sha = load_harness(ROOT / 'examples/native_benchmark/harnesses/evaluation', self.service.blobs)
         evaluator = self.service.repository.register(self.project, spec['definition']['harness']['id'], 'evaluation', sha, spec)
         # If native checks were also called, they would crash. Custom runner must own grading.
         for p in self.package.glob('tasks/*/judge/test.py'):
@@ -233,13 +233,13 @@ class DockerBenchmarkTest(unittest.IsolatedAsyncioTestCase):
     async def test_real_container_submission_and_judge(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            shutil.copytree(ROOT / 'benchmarks/native_finance', root / 'bench')
+            shutil.copytree(ROOT / 'examples/native_benchmark/benchmark', root / 'bench')
             manifest = root / 'bench/dataset.toml'
             manifest.write_text(manifest.read_text().replace('type = "workspace"',
                 'type = "docker"\nimage = "' + os.environ['LITEEVAL_TEST_DOCKER_IMAGE'] + '"'), encoding='utf-8')
             store = Store(root / 'db.sqlite'); project = store.create_project('Docker acceptance')['id']
             service = benchmark_service(store)
-            spec, sha = load_harness(ROOT / 'harnesses/finance_command', service.blobs)
+            spec, sha = load_harness(ROOT / 'examples/native_benchmark/harnesses/agent', service.blobs)
             harness = service.repository.register(project, spec['definition']['harness']['id'], 'agent', sha, spec)
             release = service.publish(project, root / 'bench')
             result = await service.run(project, release['id'], harness)

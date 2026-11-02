@@ -26,7 +26,7 @@
 
 ## 真实本地 API 与 CLI Worker 演示
 
-执行 `python examples/run_catalog_demo.py` 成功。该脚本启动临时 API、示例 HTTP Agent，以及实际 CLI Worker 子进程，并通过 HTTP 接口完成：
+执行 `python -m examples.platform catalog` 成功。该脚本启动临时 API、示例 HTTP Agent，以及实际 CLI Worker 子进程，并通过 HTTP 接口完成：
 
 - 非法导入预览准确返回 1 条非法记录，合法批次导入。
 - 发布 2 个 Case 的 business-v1 版本。
@@ -41,9 +41,9 @@
 
 ## 原有演示
 
-`python examples/run_readiness_demo.py` 成功：登录/CSRF、进度、分页、评分预览、修订冲突、归档重跑和退出均通过。
+`python -m examples.platform readiness` 成功：登录/CSRF、进度、分页、评分预览、修订冲突、归档重跑和退出均通过。
 
-`python examples/run_demo.py` 成功：v1 success_rate=0.5、v2=1.0，improved=1、same=1、regressed=0、unscored=0。
+`python -m examples.platform smoke` 成功：v1 success_rate=0.5、v2=1.0，improved=1、same=1、regressed=0、unscored=0。
 
 `python -m compileall -q liteeval tests examples` 与 `git diff --check` 通过。
 

@@ -50,8 +50,8 @@ Harness `liteeval.qianwen-research/v1` 调用千问平台 `/responses`，启用 
 在执行进程中配置 `QIANWEN_API_KEY` 和 `LITEEVAL_SECRET_KEY`（Fernet 主密钥），然后：
 
 ```powershell
-python examples/run_fab_qianwen.py --run --rows 3,4 --output data/fab-qianwen
-python examples/export_fab_trial_report.py
+python -m examples.fab_v2 native --run --rows 3,4 --output data/fab-qianwen
+python -m examples.fab_v2 report
 ```
 
 第一条会实际消耗供应商额度，默认不传 --run 时拒绝调用。复跑使用新的输出目录保存独立实验，避免覆盖本次报告。导出脚本默认读取本次 `data/fab-qianwen`，纯本地运行，不需要模型凭据。模型不存在时脚本拒绝降级；运行中可读取 progress.json、live-console.txt 或 benchmark execution 查询接口查看持久化事件。

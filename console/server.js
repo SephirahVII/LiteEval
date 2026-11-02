@@ -26,12 +26,25 @@ const MIME = {
   ".ico": "image/x-icon",
 };
 
-http
-  .createServer((req, res) => {
-    let urlPath = decodeURIComponent(req.url.split("?")[0]);
+function createServer(directory = root) {
+  directory = path.resolve(directory);
+  return http.createServer((req, res) => {
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      res.writeHead(405, { Allow: 'GET, HEAD' });
+      return res.end('Method Not Allowed');
+    }
+    let urlPath;
+    try {
+      urlPath = decodeURIComponent(req.url.split('?')[0]);
+      if (!urlPath.startsWith('/') || urlPath.includes('\0')) throw new Error('Invalid path');
+    } catch {
+      res.writeHead(400);
+      return res.end('Bad Request');
+    }
     if (urlPath === "/") urlPath = "/index.html";
-    const file = path.normalize(path.join(root, urlPath));
-    if (!file.startsWith(root)) {
+    const file = path.resolve(directory, '.' + urlPath);
+    const relative = path.relative(directory, file);
+    if (relative === '..' || relative.startsWith('..' + path.sep) || path.isAbsolute(relative)) {
       res.writeHead(403);
       return res.end("Forbidden");
     }
@@ -41,9 +54,15 @@ http
         return res.end("Not Found");
       }
       res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
-      res.end(data);
+      res.end(req.method === 'HEAD' ? undefined : data);
     });
-  })
-  .listen(port, host, () => {
-    console.log(`LiteEval console prototype → http://${host}:${port}/`);
   });
+}
+
+if (require.main === module) {
+  const server = createServer();
+  server.listen(port, host, () => {
+    console.log(`LiteEval console prototype → http://${host}:${server.address().port}/`);
+  });
+}
+module.exports = { createServer };

@@ -1,6 +1,6 @@
 # API 与配置
 
-当前版本 0.3.1，数据库 schema 5。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。公开金融题库接入与真实执行结果见 [FAB v2 报告](finance-agent-v2.md)。0.2.2 的导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方历史章节继续保留。
+当前软件版本 0.4.2，数据库 schema 6。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。公开金融题库与真实执行结果见 [FAB v2 报告](fab-qianwen-trial.md)，两种示例入口见 [Benchmark 索引](../benchmarks/README.md)。导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方保留 Dataset 服务接口说明。
 
 ## 0.3.0 新增接口
 
@@ -145,11 +145,11 @@ concurrency 范围 1..32；两种 retries 为 0..3；retry_delay_seconds 为 0..
 
 JSON Schema 仅支持 type、properties、required、additionalProperties（布尔）、items、enum、minimum、maximum、title、description；递归校验配置，未知关键字报错，不宣称支持完整标准。
 
-LLM Judge 例见 `examples/judge_config.json`。请求 OpenAI 兼容 `/chat/completions`（base_url 应为 `/v1` 等前缀），要求模型返回 `{"score":0或1,"reason":"理由"}`。`scale=continuous` 时 score 为 0..1；`pass_threshold` 默认 1，`direction` 默认 higher（也支持 lower）。`include_trajectory=true` 可加入轨迹，`json_mode=true` 请求供应商 JSON 模式。generation_parameters 仅允许 temperature、top_p、max_tokens、max_completion_tokens、seed。供应商不支持的选项不要传入；Judge 输出不合法会记 error 并保存原回复。
+LLM Judge 例见 `examples/config/judge.json`。请求 OpenAI 兼容 `/chat/completions`（base_url 应为 `/v1` 等前缀），要求模型返回 `{"score":0或1,"reason":"理由"}`。`scale=continuous` 时 score 为 0..1；`pass_threshold` 默认 1，`direction` 默认 higher（也支持 lower）。`include_trajectory=true` 可加入轨迹，`json_mode=true` 请求供应商 JSON 模式。generation_parameters 仅允许 temperature、top_p、max_tokens、max_completion_tokens、seed。供应商不支持的选项不要传入；Judge 输出不合法会记 error 并保存原回复。
 
 ## Codex 与最终状态
 
-Agent 配置例见 `examples/codex_config.json`。environment.type 为 workspace 或 docker；seed_files 是相对路径→UTF-8 文本，也可由 case.input.files 提供。prompt 优先读取 case.input.prompt，再读取 question。
+Agent 配置例见 `examples/config/codex.json`。environment.type 为 workspace 或 docker；seed_files 是相对路径→UTF-8 文本，也可由 case.input.files 提供。prompt 优先读取 case.input.prompt，再读取 question。
 
 ```json
 {"type":"docker","image":"your-codex-image@sha256:...","network":"bridge","memory":"1g","cpus":1,

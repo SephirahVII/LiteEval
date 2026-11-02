@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from liteeval.bootstrap import benchmark_service
 from liteeval.infrastructure.persistence.store import Store
@@ -18,11 +18,11 @@ async def main():
     store = Store(directory / 'liteeval.db')
     project = store.create_project('Native benchmark execution acceptance')
     service = benchmark_service(store)
-    release = service.publish(project['id'], ROOT / 'benchmarks/native_finance')
-    spec, sha = load_harness(ROOT / 'harnesses/finance_command', service.blobs)
+    release = service.publish(project['id'], ROOT / 'examples/native_benchmark/benchmark')
+    spec, sha = load_harness(ROOT / 'examples/native_benchmark/harnesses/agent', service.blobs)
     harness_id = service.repository.register(project['id'], spec['definition']['harness']['id'], 'agent', sha, spec)
     result = await service.run(project['id'], release['id'], harness_id, trusted_local=True)
-    eval_spec, eval_sha = load_harness(ROOT / 'harnesses/finance_evaluator', service.blobs)
+    eval_spec, eval_sha = load_harness(ROOT / 'examples/native_benchmark/harnesses/evaluation', service.blobs)
     evaluator_id = service.repository.register(project['id'], eval_spec['definition']['harness']['id'], 'evaluation', eval_sha, eval_spec)
     external_result = await service.run(project['id'], release['id'], harness_id,
                                         evaluation_ref=evaluator_id, trusted_local=True)

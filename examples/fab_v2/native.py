@@ -8,7 +8,7 @@ import re
 import sys
 import urllib.request
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from liteeval.application import connections
 from liteeval.application.benchmark_exports import export_execution
@@ -50,7 +50,7 @@ async def main(args):
             ids[model] = connections.create(store, {'project_id': project, 'name': 'Qianwen ' + model,
                 'kind': 'openai_compatible', 'endpoint': args.base_url, 'model': model, 'api_key': key})['id']
     package = root / ('package-rows-' + args.rows.replace(',', '-'))
-    convert_fab(ROOT / 'benchmarks/finance_agent_v2', package, [int(n) for n in args.rows.split(',')])
+    convert_fab(ROOT / 'benchmarks/fab_v2_direct', package, [int(n) for n in args.rows.split(',')])
     service = benchmark_service(store)
     release = service.publish(project, package)
     state = {'mode': 'real_provider_research', 'authentication': 'user_provided_qianwen_api_key',

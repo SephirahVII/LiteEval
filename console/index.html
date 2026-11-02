@@ -687,7 +687,7 @@ function mockRun(caseId) {
       { name: "trace.events.jsonl", size: "9.8 KB", sha: "e3f0…1b77", kind: "事件 v2" },
     ],
     usage: {
-      target: { in: 3496, out: 449, cachedIn: 1180, cacheWrite: 220, reasoning: 1024, calls: 3, retries: 1 },
+      target: { in: 3496, out: 1473, cachedIn: 1180, cacheWrite: 220, reasoning: 1024, calls: 3, retries: 1 },
       judge: { in: 1560, out: 64, cachedIn: 0, cacheWrite: 0, reasoning: 0, calls: 1, retries: 0 },
       cost: [{ ccy: "USD", amount: 0.0042, samples: 4 }],
       latency: { mean: "3.4s", p50: "3.1s", p95: "4.8s" },
@@ -1754,8 +1754,10 @@ function openAddKey() {
 function doAddKey() {
   const name = ($("#nkName").value || "").trim().toUpperCase().replace(/\s+/g,"_");
   if (!name) { toast("请填写 Key 名称", false); return; }
+  if (!/^[A-Z][A-Z0-9_]{0,99}$/.test(name)) { toast("Key 名称仅允许字母、数字和下划线，并以字母开头", false); return; }
   if (userKeys.some(k=>k.name===name)) { toast(`Key ${name} 已存在`, false); return; }
   const v = $("#nkValue").value;
+  $("#nkValue").value = '';
   userKeys.unshift({ id: "key_" + Math.random().toString(16).slice(2,6), name, masked: v ? v.slice(0,3) + "••••••••" + v.slice(-4) : "••••••••", usedBy: [], created: "刚刚", rotatedAt: null });
   closeModal();
   toast(`Key ${name} 已加密保存`);
@@ -1955,16 +1957,16 @@ function viewRun() {
     </div>`;
   } else if (state.runTab === "usage") {
     const u = r.usage;
-    const tot = u.target.in + u.target.out + u.target.cachedIn + u.target.reasoning;
+    const tot = u.target.in + u.target.out;
     const seg = (v,c) => `<i style="width:${(v/tot*100).toFixed(1)}%;background:${c}"></i>`;
     body = `
     <div class="panel"><div class="panel-head"><h3>Token 分解 · Target</h3><span class="micro-label">cached / reasoning 不叠加进总量</span></div>
       <div class="panel-body">
-        <div class="tok-bar">${seg(u.target.in-u.target.cachedIn,"var(--info)")}${seg(u.target.cachedIn,"#B9CBD8")}${seg(u.target.out,"var(--accent)")}${seg(u.target.reasoning,"var(--warn)")}</div>
+        <div class="tok-bar">${seg(u.target.in-u.target.cachedIn,"var(--info)")}${seg(u.target.cachedIn,"#B9CBD8")}${seg(u.target.out-u.target.reasoning,"var(--accent)")}${seg(u.target.reasoning,"var(--warn)")}</div>
         <div class="tok-legend">
           <span><span class="sw" style="background:var(--info)"></span>input <b class="mono">${(u.target.in-u.target.cachedIn).toLocaleString()}</b></span>
           <span><span class="sw" style="background:#B9CBD8"></span>cached_input <b class="mono">${u.target.cachedIn.toLocaleString()}</b></span>
-          <span><span class="sw" style="background:var(--accent)"></span>output <b class="mono">${u.target.out.toLocaleString()}</b></span>
+          <span><span class="sw" style="background:var(--accent)"></span>output（非 reasoning）<b class="mono">${(u.target.out-u.target.reasoning).toLocaleString()}</b></span>
           <span><span class="sw" style="background:var(--warn)"></span>reasoning <b class="mono">${u.target.reasoning.toLocaleString()}</b></span>
           <span>cache_write <b class="mono">${u.target.cacheWrite}</b></span>
         </div>

@@ -19,7 +19,7 @@ from liteeval.integrations.benchmarks.fab_package import convert_fab, package_fi
 from liteeval.application import connections
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'benchmarks/finance_agent_v2'
+SOURCE = ROOT / 'benchmarks/fab_v2_direct'
 PACKAGE = ROOT / 'benchmarks/fab_v2_public'
 
 

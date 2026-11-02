@@ -24,9 +24,9 @@
 
 ## 原有 Demo
 
-- `python examples/run_demo.py` 通过：0.5→1.0，improved=1、same=1。
-- `python examples/run_readiness_demo.py` 通过：会话/CSRF、分页、预览、冲突、归档历史重跑、退出。
-- `python examples/run_catalog_demo.py` 通过：固定版本、评分器修订、Worker 预检、相同版本 Compare、过期预检 409。
+- `python -m examples.platform smoke` 通过：0.5→1.0，improved=1、same=1。
+- `python -m examples.platform readiness` 通过：会话/CSRF、分页、预览、冲突、归档历史重跑、退出。
+- `python -m examples.platform catalog` 通过：固定版本、评分器修订、Worker 预检、相同版本 Compare、过期预检 409。
 
 ## 远端验证
 

@@ -157,9 +157,9 @@ Invoke-WebRequest -Uri "$base/v1/experiments/$experimentId/export?format=zip" -H
 
 ```powershell
 python -m unittest discover -s tests -v
-python examples/run_demo.py
-python examples/run_readiness_demo.py
-python examples/run_catalog_demo.py
+python -m examples.platform smoke
+python -m examples.platform readiness
+python -m examples.platform catalog
 ```
 
 新增集成测试覆盖加密持久化/替换/删除、错误主密钥、项目权限、连接绑定、真实本地 HTTP Target/Judge、Judge 重试用量、运行中日志读取、租约隔离、四种导出、ZIP 工件哈希与凭据脱敏。真实供应商、业务 Agent、Codex/Docker 执行环境仍需使用你自己的配置进行验收。

@@ -169,7 +169,7 @@ Worker 仅上报当前配置引用的环境变量名和是否存在，不上报�
 
 ```powershell
 python -m unittest discover -s tests -v
-python examples/run_catalog_demo.py
+python -m examples.platform catalog
 ```
 
 新 Demo 自动启动本地 API、示例 Agent 和真实 CLI Worker 子进程，验证导入预览、版本发布、评分器修订、Worker 心跳、带哈希提交、版本 Compare 与过期预检。报告为 `data/catalog-report.json`。不使用日常数据库，不调用真实模型。

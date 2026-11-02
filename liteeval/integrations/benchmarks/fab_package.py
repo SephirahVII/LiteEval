@@ -1,13 +1,11 @@
 """Deterministic conversion of pinned FAB v2 public questions to native packages."""
-import csv
 import hashlib
-import io
 import json
 from pathlib import Path
 import tempfile
 from liteeval.domain.values import decoded
-from liteeval.domain.rubrics import validate_rubric
 from liteeval.infrastructure.sources.package import DirectoryLoader
+from liteeval.integrations.benchmarks.fab_source import load_source, select_rows, rubric_for, research_prompt
 
 OFFICIAL_TOOLS = ['edgar_search', 'web_search', 'parse_html_page', 'retrieve_information', 'calculator', 'price_history']
 RESEARCH_CAPABILITIES = ['workspace.read', 'workspace.write', 'process.execute', 'web.search', 'web.fetch']
@@ -23,17 +21,8 @@ def quote(value):
 
 def package_files(source, rows=None, docker_image=None):
     source = Path(source)
-    provenance = decoded((source / 'source.json').read_bytes())
-    payload = (source / 'public.csv').read_bytes()
-    if hashlib.sha256(payload).hexdigest() != provenance['sha256']:
-        raise ValueError('FAB public.csv SHA-256 mismatch')
-    data = list(csv.DictReader(io.StringIO(payload.decode('utf-8-sig'))))
-    if len(data) != provenance['question_count']:
-        raise ValueError('FAB question count mismatch')
-    selected = list(range(1, len(data) + 1)) if rows is None else list(rows)
-    if not selected or any(type(n) is not int or not 1 <= n <= len(data) for n in selected) or len(selected) != len(set(selected)):
-        raise ValueError('Choose distinct, valid one-based FAB rows')
-    selected.sort()
+    provenance, data = load_source(source)
+    selected = select_rows(data, rows)
     suffix = '' if selected == list(range(1, len(data) + 1)) else '-rows-' + '-'.join(map(str, selected))
     kind = 'docker' if docker_image else 'workspace'
     identifier = 'fab-v2-public' + suffix
@@ -68,32 +57,11 @@ target_capabilities = {json.dumps(RESEARCH_CAPABILITIES)}
     count = 0
     for number in selected:
         row = data[number - 1]; question = row['Question']
-        if not question.strip(): raise ValueError('Empty FAB question')
-        upstream = decoded(row['Rubric'])
-        if not isinstance(upstream, list) or not upstream: raise ValueError('Empty FAB rubric')
-        criteria = []
-        for index, item in enumerate(upstream, 1):
-            if item.get('operator') != 'finance_agent_v2_operator': raise ValueError('Unknown FAB operator')
-            modifiers = item.get('modifiers', {})
-            if set(modifiers) - {'severity', 'category'} or modifiers.get('category') not in (None, 'must_pass'):
-                raise ValueError('Unknown FAB rubric modifier')
-            criteria.append({'id': f'criterion-{index:03d}', 'description': item['criteria'],
-                             'weight': modifiers.get('severity', 1), 'must_pass': modifiers.get('category') == 'must_pass',
-                             'source': item})
-        rubric = {'schema_version': 1, 'criteria': criteria,
-                  'metadata': {'source_row': number, 'benchmark_source': provenance}}
-        validate_rubric(rubric); count += len(criteria)
+        rubric = rubric_for(row, number, provenance)
+        count += len(rubric['criteria'])
         task_id = f'fabv2-public-{number:03d}'
         prefix = 'tasks/' + task_id + '/'
-        prompt = ('Research the question below using primary company disclosures and filings. '
-                  'Preserve the dates, financial conventions and numeric tolerances in the question. '
-                  'If a date is ambiguous, state the interpretation; do not silently substitute the latest fiscal year. '
-                  'Use code or a calculator for arithmetic. Cite source URLs and reporting dates. '
-                  'Write the complete answer to response.md in your workspace. '
-                  'Optionally save source URLs in sources.json and calculations in calculations.json. '
-                  'Do not inspect benchmark answers, private grading files, other workspaces or the parent repository. '
-                  'Do not search the entire benchmark question verbatim. State unavailable evidence instead of inventing it.\n\n'
-                  'QUESTION:\n' + question + '\n')
+        prompt = research_prompt(question)
         task = f'''schema_version = 1
 [task]
 id = {quote(task_id)}

@@ -25,11 +25,11 @@
 
 ## 原有 API Demo
 
-执行 `python examples/run_demo.py` 成功：两个 Case，v1 质量通过率 0.5，v2 为 1.0；Compare 为 improved=1、same=1、regressed=0、unscored=0。报告为 `data/demo/report.json`。
+执行 `python -m examples.platform smoke` 成功：两个 Case，v1 质量通过率 0.5，v2 为 1.0；Compare 为 improved=1、same=1、regressed=0、unscored=0。报告为 `data/demo/report.json`。
 
 ## 新增第一步演示
 
-执行 `python examples/run_readiness_demo.py` 成功，实际经过本地 HTTP API、示例 Agent、Runner 和 PreviewRunner：
+执行 `python -m examples.platform readiness` 成功，实际经过本地 HTTP API、示例 Agent、Runner 和 PreviewRunner：
 
 - Owner 登录与 CSRF 写入通过，退出后会话返回 401。
 - 排队时 pending=2，运行后 terminal=2。

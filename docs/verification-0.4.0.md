@@ -4,11 +4,11 @@
 
 ## 实际执行
 
-执行命令：`python examples/run_native_benchmark.py`。
+执行命令：`python -m examples.native_benchmark`。
 
-- 题库：`benchmarks/native_finance`，2 道题，正增长与负增长。
-- Agent Harness：`harnesses/finance_command`，从公开 CSV 读取数据并计算，没有读取 Ground Truth。
-- Evaluation Harness：内置 `liteeval.native/v1` 和独立注册的 `harnesses/finance_evaluator` 分别执行，两组各 2/2 通过。
+- 题库：`examples/native_benchmark/benchmark`，2 道题，正增长与负增长。
+- Agent Harness：`examples/native_benchmark/harnesses/agent`，从公开 CSV 读取数据并计算，没有读取 Ground Truth。
+- Evaluation Harness：内置 `liteeval.native/v1` 和独立注册的 `examples/native_benchmark/harnesses/evaluation` 分别执行，两组各 2/2 通过。
 - 真实操作：Agent/Judge 子进程、CSV 读取、JSON/Markdown 输出、256 字节二进制复制与 SHA-256 检查。
 - 每题采集 3 个产物，原始文件进入内容寻址存储；ZIP 共 6 个产物文件及计划/事件/汇总，共 9 个成员。
 - 重评只读取已持久化 Submission，不调用 Target，不覆盖原结果。

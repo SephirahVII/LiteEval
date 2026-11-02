@@ -4,7 +4,7 @@
 
 ## 1. 范围与来源
 
-原始来源保留在 `benchmarks/finance_agent_v2`，原生包为 `benchmarks/fab_v2_public`。
+原始来源保留在 `benchmarks/fab_v2_direct`，原生包为 `benchmarks/fab_v2_public`。
 
 - 公开题 27 道、9 类、239 条检查。
 - 仓库：[vals-ai/finance-agent-v2](https://github.com/vals-ai/finance-agent-v2)。固定 commit `03c7c432b645f42f81ef3c13957100b182217d7c`。
@@ -40,9 +40,9 @@ Target 上限为 7200 秒，不是要求必须运行两小时。Expert time 是�
 ## 3. 转换与发布：不调用模型
 
 ```powershell
-python -m liteeval.interfaces.cli.main benchmark convert-fab benchmarks/finance_agent_v2 benchmarks/fab_v2_public
+python -m liteeval.interfaces.cli.main benchmark convert-fab benchmarks/fab_v2_direct benchmarks/fab_v2_public
 python -m liteeval.interfaces.cli.main benchmark validate benchmarks/fab_v2_public
-python examples/prepare_fab_package.py
+python -m examples.fab_v2 prepare
 ```
 
 转换验证原 CSV 的 hash、题量、operator 和 modifiers。目标内容相同则幂等；不同时拒绝覆盖，使用新目录/版本。转换与静态校验不需要项目、数据库或模型凭据。prepare 示例才创建独立数据库、项目和原生 Release，并将报告写入 `data/fab-v2-native/catalog.json`。
@@ -52,7 +52,7 @@ python examples/prepare_fab_package.py
 准备两题子集：
 
 ```powershell
-python -m liteeval.interfaces.cli.main benchmark convert-fab benchmarks/finance_agent_v2 data/fab-v2-native/rows-3-4 --rows 3,4
+python -m liteeval.interfaces.cli.main benchmark convert-fab benchmarks/fab_v2_direct data/fab-v2-native/rows-3-4 --rows 3,4
 ```
 
 指定 Docker 时增加 `--docker-image 仓库@sha256:真实digest`。转换后的 profile 使用 network=bridge、2 CPU、2g 内存；须预先构建/准备实际包含研究 Agent 及工具依赖的镜像。仅有 Python 的镜像不意味着具备金融研究能力。不同环境生成不同发布版本，不在运行时自动降级。
@@ -77,7 +77,7 @@ liteeval --db data/fab-v2-native/liteeval.db harness PATH_TO_ADAPTED_RESEARCH_HA
 liteeval --db data/fab-v2-native/liteeval.db benchmark run RELEASE_ID --project PROJECT_ID --agent-harness RESEARCH_HARNESS_REVISION_ID --judge-connection JUDGE_CONNECTION_ID --trusted-local
 ```
 
-以上大写项需替换为实际配置。千问平台试跑可直接使用 `examples/run_fab_qianwen.py --run`，配置方式见专用报告；不会默认调用模型。Workspace 仅适用于受信任本地代码；Docker 包运行不使用 --trusted-local。公开/自建 Harness 需要满足协议，不支持时预检拒绝。
+以上大写项需替换为实际配置。千问平台试跑使用 `python -m examples.fab_v2 native --run`，配置方式见专用报告；不会默认调用模型。Workspace 仅适用于受信任本地代码；Docker 包运行不使用 --trusted-local。公开/自建 Harness 需要满足协议，不支持时预检拒绝。
 
 ## 5. 评分协议
 

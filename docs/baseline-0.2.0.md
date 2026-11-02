@@ -68,7 +68,7 @@
 
 ### API Demo
 
-命令：`python examples/run_demo.py`
+命令：`python -m examples.platform smoke`
 
 执行成功。通过真实本地 HTTP 请求完成项目、Trace、Case、批量导入、两个 Agent 版本、实验执行和 Compare。
 

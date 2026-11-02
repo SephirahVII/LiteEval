@@ -12,7 +12,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, build_opener, ProxyHandler
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from liteeval import __version__
 from liteeval.interfaces.http.api import make_handler

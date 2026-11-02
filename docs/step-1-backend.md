@@ -26,8 +26,8 @@
 Set-Location 'D:\Data\Projects\GoldTrace'
 python --version
 python -m unittest discover -s tests -v
-python examples/run_demo.py
-python examples/run_readiness_demo.py
+python -m examples.platform smoke
+python -m examples.platform readiness
 ```
 
 Python 要求 3.11+，不需要额外 pip 安装。第一个 Demo 验证原来的新旧 Agent Compare；第二个 Demo 验证登录/CSRF、实验进度、分页、评分预览、409 编辑冲突、归档后历史重跑和退出。均仅调用本地示例服务，不使用真实模型额度。

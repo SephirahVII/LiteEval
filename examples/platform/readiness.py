@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, build_opener, ProxyHandler
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from liteeval.interfaces.http.api import make_handler
 from liteeval.application.previews import PreviewRunner
 from liteeval.application.dataset_runner import ExperimentRunner

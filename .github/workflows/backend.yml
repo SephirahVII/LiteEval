@@ -6,6 +6,13 @@ permissions:
   contents: read
 
 jobs:
+  console-prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: node --test console/server.test.js console/prototype.test.js
+
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -23,15 +30,15 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e .
       - run: python -m unittest discover -s tests -v
-      - run: python examples/run_demo.py
-      - run: python examples/run_readiness_demo.py
-      - run: python examples/run_catalog_demo.py
-      - name: Prepare public finance benchmark without model calls
-        run: python examples/run_finance_benchmark.py
+      - run: python -m examples.platform smoke
+      - run: python -m examples.platform readiness
+      - run: python -m examples.platform catalog
+      - name: Validate direct FAB CSV entry without model calls
+        run: python -m examples.fab_v2 direct
       - name: Execute native directory benchmark with real subprocesses
-        run: python examples/run_native_benchmark.py
+        run: python -m examples.native_benchmark
       - name: Validate and publish native FAB public package without model calls
-        run: python examples/prepare_fab_package.py
+        run: python -m examples.fab_v2 prepare
 
   docker-acceptance:
     runs-on: ubuntu-latest

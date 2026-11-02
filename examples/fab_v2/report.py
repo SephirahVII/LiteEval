@@ -1,12 +1,13 @@
 """Render real trial evidence without changing answers, verdicts or original runs."""
 from collections import Counter
+import argparse
 import json
 import hashlib
 from pathlib import Path
 import sys
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from liteeval.bootstrap import benchmark_service
 from liteeval.infrastructure.persistence.store import Store
@@ -50,8 +51,8 @@ def offline_recovery(service, execution, task, task_spec):
     return matches[0]
 
 
-def main():
-    root = ROOT / 'data/fab-qianwen'
+def main(root=None):
+    root = Path(root or ROOT / 'data/fab-qianwen').resolve()
     report = json.loads((root / 'report.json').read_text(encoding='utf-8'))
     service = benchmark_service(Store(root / 'liteeval.db'))
     models = report['models']; project = report['project_id']
@@ -151,4 +152,7 @@ def main():
     print(json.dumps({'markdown': str(root / 'report.md'), 'evidence': str(root / 'evidence.json')}, ensure_ascii=False))
 
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input', default=str(ROOT / 'data/fab-qianwen'))
+    main(parser.parse_args().input)

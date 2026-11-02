@@ -1,4 +1,4 @@
-"""Tiny replaceable HTTP Agent: python examples/demo_agent.py [v1|v2] [port]."""
+"""Tiny replaceable HTTP Agent: python -m examples.platform.demo_agent [v1|v2] [port]."""
 
 import json
 import sys
