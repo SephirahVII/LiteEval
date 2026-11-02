@@ -1,0 +1,25 @@
+schema_version = 1
+[task]
+id = "parse-001"
+title = "Parse application log"
+category = "parsing"
+tags = ["logs", "json"]
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "outputs/stats.json"
+required = true
+[judge]
+ground_truth_file = "judge/ground_truth.json"
+[[judge.checks]]
+id = "stats"
+type = "command"
+entrypoint = "judge/test_stats.py"
+command = ["{python}", "/judge/test_stats.py", "--ground-truth", "/judge/ground_truth.json", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 1
+must_pass = true
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 1

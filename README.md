@@ -30,7 +30,7 @@ FAB 两种接入、历史实现归属及示例入口统一见 [Benchmark 索引]
 | --- | --- | --- |
 | 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环实测；Qianwen 研究 Harness 与两种真实 Judge 已完成公开两题诊断 |
 | 可恢复评测服务 | Case 并发、Agent/Judge 独立重试、取消、租约心跳、崩溃接管、结果写入隔离、提交幂等、项目密钥、原始响应与工件 | 本地集成测试覆盖并发、重试、取消、恢复和鉴权 |
-| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证 | SDK、真实子进程/文件和 Linux CI 实际 Docker 已验证；Codex Adapter 仅替身 CLI 测试，本轮研究未使用它 |
+| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证、Harness 声明式环境变量透传 | SDK、真实子进程/文件和 Linux CI 实际 Docker 已验证；Codex Adapter 仅替身 CLI 测试；Docker 沙箱已在 macOS 实跑验收（`harnesses/claude_code` 与 `harnesses/dsh` + `benchmarks/agent_sandbox`，headless Claude Code / DeepSeek Harness 容器内执行，API Key 经 Worker 环境注入），真实模型成绩需有效 API Key 后单独验收 |
 
 这是可以接入自己的 HTTP Agent 和目录研究 Harness 的后端 MVP。真实 Qianwen 模型试跑见上述报告，Docker 已通过 Linux CI 的实际容器验收；正式生产部署、更多题目的质量校准与其他框架接入仍需继续完成。
 

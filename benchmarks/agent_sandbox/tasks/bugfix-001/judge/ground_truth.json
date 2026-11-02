@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {"function": "mean", "args": [[1, 2, 3, 4]], "expected": 2.5},
+    {"function": "mean", "args": [[10]], "expected": 10.0},
+    {"function": "mean", "args": [[-1.5, 1.5]], "expected": 0.0},
+    {"function": "mean", "args": [[2, 4, 6, 8, 10]], "expected": 6.0},
+    {"function": "median", "args": [[3, 1, 2]], "expected": 2.0},
+    {"function": "median", "args": [[4, 1, 2, 3]], "expected": 2.5},
+    {"function": "median", "args": [[7]], "expected": 7.0},
+    {"function": "median", "args": [[10, 20, 30, 40, 50, 60]], "expected": 35.0},
+    {"function": "variance", "args": [[1, 2, 3, 4]], "expected": 1.25},
+    {"function": "variance", "args": [[5, 5, 5]], "expected": 0.0},
+    {"function": "variance", "args": [[2, 4]], "expected": 1.0},
+    {"function": "variance", "args": [[0, 10, 20, 30, 40]], "expected": 200.0}
+  ]
+}

@@ -1,0 +1,32 @@
+schema_version = 1
+[task]
+id = "bugfix-001"
+title = "Fix the statistics module"
+category = "bugfix"
+tags = ["python", "debugging"]
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "outputs/solution.py"
+required = true
+[[artifacts]]
+path = "outputs/NOTES.md"
+required = true
+[[judge.checks]]
+id = "correctness"
+type = "command"
+entrypoint = "judge/test_correctness.py"
+command = ["{python}", "/judge/test_correctness.py", "--ground-truth", "/judge/ground_truth.json", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 1
+must_pass = true
+[[judge.checks]]
+id = "notes"
+type = "command"
+entrypoint = "judge/test_notes.py"
+command = ["{python}", "/judge/test_notes.py", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 0.5
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 0.99

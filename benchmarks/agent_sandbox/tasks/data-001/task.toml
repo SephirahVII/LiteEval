@@ -1,0 +1,34 @@
+schema_version = 1
+[task]
+id = "data-001"
+title = "Aggregate sales CSV"
+category = "data"
+tags = ["csv", "aggregation"]
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "outputs/summary.json"
+required = true
+[[artifacts]]
+path = "outputs/report.md"
+required = true
+[judge]
+ground_truth_file = "judge/ground_truth.json"
+[[judge.checks]]
+id = "summary"
+type = "command"
+entrypoint = "judge/test_summary.py"
+command = ["{python}", "/judge/test_summary.py", "--ground-truth", "/judge/ground_truth.json", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 1
+must_pass = true
+[[judge.checks]]
+id = "report"
+type = "command"
+entrypoint = "judge/test_report.py"
+command = ["{python}", "/judge/test_report.py", "--submission", "/submission", "--result", "/judge-output/result.json"]
+weight = 0.5
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 0.99

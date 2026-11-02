@@ -1,0 +1,28 @@
+schema_version = 1
+
+[benchmark]
+id = "agent-sandbox"
+version = "1.0.0"
+name = "Agent sandbox coding tasks"
+description = "Small deterministic coding/data tasks executed by the coding agent harnesses (Claude Code, DeepSeek Harness) inside a hardened Docker sandbox"
+license = "MIT"
+
+[tasks]
+include = ["tasks/*/task.toml"]
+
+[defaults]
+environment_profile = "sandbox"
+target_timeout_seconds = 900
+judge_timeout_seconds = 120
+
+[environment_profiles.sandbox]
+type = "docker"
+image = "localhost:5000/liteeval/agent-sandbox@sha256:c764921ad4e89bdf554b9dc5e672f22e66a99d3227a810da8592c92c3aae5955"
+network = "bridge"
+cpus = 2
+memory = "2g"
+
+[harness_requirements]
+evaluation_protocol = "liteeval.task/v1"
+default_evaluation_harness = "liteeval.native/v1"
+target_capabilities = ["workspace.read", "workspace.write", "process.execute"]

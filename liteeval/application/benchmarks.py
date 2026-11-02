@@ -3,6 +3,7 @@ from liteeval.domain.values import decoded
 import asyncio
 from dataclasses import asdict
 import json
+import os
 import time
 from liteeval.domain.benchmark import aggregate
 from liteeval.domain.values import digest, encoded
@@ -29,6 +30,9 @@ class BenchmarkService:
         if digest(manifest) != release['digest']: raise ValueError('Release integrity mismatch')
         agent, agent_row = self.registry.resolve(project_id, agent_ref, 'agent')
         evaluation, eval_row = self.registry.resolve(project_id, evaluation_ref, 'evaluation')
+        missing_env = [name for name in agent_row['spec'].get('env', []) if not os.environ.get(name)]
+        if missing_env:
+            raise ValueError('Agent Harness requires Worker environment variables: ' + ', '.join(missing_env))
         for sha in manifest['source_files'].values(): self.blobs.get(sha)
         for sha in agent_row['spec'].get('resources', {}).values(): self.blobs.get(sha)
         provides = set(BASE_CAPABILITIES) | set(agent_row['spec'].get('capabilities', [])) | set(agent_row['spec'].get('definition', {}).get('capabilities', {}).get('provides', []))

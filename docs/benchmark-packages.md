@@ -87,7 +87,11 @@ version = "1.0.0"
 protocol = "liteeval.agent/v1"
 [runtime]
 command = ["{python}", "{harness}/agent.py"]
+env = ["ANTHROPIC_API_KEY"]          # 必需：preflight 要求 Worker 环境存在
+env_optional = ["ANTHROPIC_BASE_URL"] # 可选：存在才透传
 ```
+
+`[runtime]` 的 `env`/`env_optional` 声明 Harness 需要从 Worker 进程环境透传的变量名（仅大写命名）。`env` 中的变量缺失时 preflight 直接报错并列出名字；`env_optional` 存在才注入。值只从 Worker 环境解析——Docker 模式下经 `docker exec -e NAME` 注入，变量值不出现在宿主 argv，也不会写入包内容、日志或导出。未声明的变量不会进入 Harness 进程（白名单隔离）。
 
 Agent 通过 stdin 接收 JSON：schema_version、task_id、prompt、公开 input_files 和 required_artifacts。其目录只物化公开输入与 Harness 自身资源，不物化 Ground Truth 或 Judge；宿主安全限制仍取决于运行环境。stdout 必须为一个包含 `schema_version=1`、`output` 的 JSON 对象；普通日志写 stderr。产物必须实际写入工作区，平台不从最终文字伪造文件。
 
@@ -132,8 +136,12 @@ command Judge 根据 argv 写入 `{result}` 指定的 JSON 文件，包含 schem
 
 ## 6. Docker 和待验收范围
 
-Docker profile 使用 `type="docker"` 与 `image="仓库@sha256:64位digest"`，可指定 network=none/bridge、cpus、memory。当前不直接构建 Dockerfile，须预先准备镜像并写入实际 digest；缺少 Docker CLI 会阻止执行，不降级为本地运行。
+Docker profile 使用 `type="docker"` 与 `image="仓库@sha256:64位digest"`，可指定 network=none/bridge、cpus、memory。镜像须预先构建并以 repo digest 固定（本地构建没有 repo digest：`images/agent-sandbox/build.sh` 通过 localhost:5000 本地 registry 推送后取回 digest 写入 dataset.toml）；缺少 Docker CLI 会阻止执行，不降级为本地运行。
 
-本机缺少 Docker CLI/WSL；[Linux CI 实际容器作业](https://github.com/SephirahVII/LiteEval/actions/runs/41340058156) 已通过：准备 Python 镜像、解析实际 RepoDigest，再运行容器与独立 Judge。千问研究工具由供应商云端执行，不代表运行在这个 Docker 中。
+容器加固固定为：只读根文件系统、`--cap-drop ALL`、`no-new-privileges`、pids/memory/cpus 限制、宿主 uid 映射、/tmp 128MB tmpfs、workspace bind mount。需要写 `$HOME` 的 Agent（如 Claude Code）应自行把 HOME 迁到 /tmp。注意：加固 tmpfs 无法 mmap 可执行文件（dlopen 会失败）；像 dsh 这样从 tmpdir 加载原生 addon 的 Agent，需由 Harness 把 TMPDIR 迁到 workspace bind mount 内（见 `harnesses/dsh/agent.py`）。
+
+[Linux CI 实际容器作业](https://github.com/SephirahVII/LiteEval/actions/runs/41340058156) 已通过：准备 Python 镜像、解析实际 RepoDigest，再运行容器与独立 Judge。千问研究工具由供应商云端执行，不代表运行在这个 Docker 中。
+
+另已交付 macOS 本机 Docker 实跑验收（2026-11-02，macOS + Docker 29.8.2）：`harnesses/claude_code`（headless Claude Code，`env` 声明 `ANTHROPIC_API_KEY`）与 `harnesses/dsh`（headless DeepSeek Harness，`env` 声明 `DEEPSEEK_API_KEY`）+ `benchmarks/agent_sandbox`（3 题，离线 command judge，题目与 agent 无关，同一 Release 可换 harness 复跑）。Key 由 Worker 环境经 `docker exec -e` 注入。真实模型的长任务质量验收仍需有效 API Key 后单独进行。
 
 当前还未交付自动 Git 同步、通用服务图、skills 注入、任意公开框架直接兼容、远程长任务 Job 协议、User Agent、官方 FAB 六工具/三 Judge/重复试验方法复刻，以及全公开集质量验收。双 Judge 诊断不等于官方 jury。尚不支持的声明明确拒绝；不会由旧实现兜底。

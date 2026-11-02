@@ -13,7 +13,8 @@ class CommandAgentHarness:
         runtime = context['runtime']
         runtime.materialize(context['spec']['resources'], '.harness/')
         command = runtime.argv(context['spec']['command'], {'harness': '.harness'})
-        result = await runtime.execute(command, context['timeout'], encoded(public_task))
+        result = await runtime.execute(command, context['timeout'], encoded(public_task),
+                                       env_names=context['spec'].get('env', []) + context['spec'].get('env_optional', []))
         if result['timed_out']: raise TimeoutError('Target deadline exceeded')
         if result['exit_code'] != 0: raise RuntimeError('Target process failed: ' + result['stderr'][-2000:])
         output = decoded(result['stdout'])

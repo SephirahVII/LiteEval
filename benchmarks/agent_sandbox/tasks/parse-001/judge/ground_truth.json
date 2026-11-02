@@ -1,0 +1,6 @@
+{
+  "counts": {"INFO": 5, "WARN": 3, "ERROR": 4},
+  "first_timestamp": "2026-02-01T08:15:00Z",
+  "last_timestamp": "2026-02-01T08:25:03Z",
+  "most_frequent_error": "db connection failed: timeout"
+}

@@ -1,0 +1,9 @@
+date,region,product,units,unit_price
+2026-01-03,north,alpha,2,9.99
+2026-01-04,south,beta,5,4.50
+2026-01-05,north,beta,1,4.50
+2026-01-06,east,alpha,3,9.99
+2026-01-07,south,alpha,2,9.99
+2026-01-08,east,gamma,1,25.00
+2026-01-09,north,gamma,2,25.00
+2026-01-10,south,beta,3,4.50
