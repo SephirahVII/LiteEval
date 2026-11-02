@@ -6,6 +6,7 @@ import tomllib
 from liteeval.domain.benchmark import fields
 from liteeval.domain.paths import relative_path
 from liteeval.domain.values import digest
+from liteeval.domain.capabilities import validate_capabilities
 
 
 def load_harness(path, blobs):
@@ -13,7 +14,7 @@ def load_harness(path, blobs):
     manifest = root / 'harness.toml'
     if manifest.is_symlink(): raise ValueError('Harness symlink rejected')
     conf = tomllib.loads(manifest.read_text(encoding='utf-8'))
-    fields(conf, ['schema_version', 'harness', 'runtime', 'metadata'], 'harness package')
+    fields(conf, ['schema_version', 'harness', 'runtime', 'metadata', 'capabilities'], 'harness package')
     fields(conf['harness'], ['id', 'role', 'version', 'protocol'], 'harness')
     role = conf['harness'].get('role')
     protocol = {'agent': 'liteeval.agent/v1', 'evaluation': 'liteeval.evaluation/v1'}.get(role)
@@ -22,6 +23,8 @@ def load_harness(path, blobs):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,99}', conf['harness']['id']):
         raise ValueError('Invalid harness id')
     fields(conf['runtime'], ['command'], 'runtime')
+    fields(conf.get('capabilities', {}), ['provides'], 'harness capabilities')
+    validate_capabilities(conf.get('capabilities', {}).get('provides', []))
     argv = conf['runtime']['command']
     if not isinstance(argv, list) or not argv or not all(isinstance(a, str) and a for a in argv):
         raise ValueError('Harness command requires argv')

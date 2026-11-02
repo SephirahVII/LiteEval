@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "HD fiscal year 2024 contained 371 actual days",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "HD fiscal year 2024 contained 371 actual days",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "LOW fiscal year 2024 contained 364 actual days",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "LOW fiscal year 2024 contained 364 actual days",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "HD average merchandise inventories for fiscal year 2024 and fiscal year 2023 is $22,213.50 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "HD average merchandise inventories for fiscal year 2024 and fiscal year 2023 is $22,213.50 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "HD days inventory outstanding is 77.60 days",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "HD days inventory outstanding is 77.60 days",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "LOW average merchandise inventories for fiscal year 2024 and fiscal year 2023 is $17,151.50 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "LOW average merchandise inventories for fiscal year 2024 and fiscal year 2023 is $17,151.50 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "LOW days inventory outstanding is 111.89 days",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "LOW days inventory outstanding is 111.89 days",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "HD turns its inventory faster by 34.29 days",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "HD turns its inventory faster by 34.29 days",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "Conclude that HD is more efficient on the basis of inventory days outstanding.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Conclude that HD is more efficient on the basis of inventory days outstanding.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 6,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

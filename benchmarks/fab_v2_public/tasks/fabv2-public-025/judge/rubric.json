@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "FY 2024 Revenue is $34,857 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2024 Revenue is $34,857 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "FY 2026 Revenue is $41,525 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Revenue is $41,525 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "FY 2026 Restructuring is $586 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Restructuring is $586 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "FY 2026 Operating Income is $8,331 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Operating Income is $8,331 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "FY 2026 Depreciation & Amortization (D&A) is $5,828 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Depreciation & Amortization (D&A) is $5,828 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "FY 2026 Stock-Based Compensation is $3,509 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Stock-Based Compensation is $3,509 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "FY 2026 Change in Net Working Capital (NWC) is negative $781 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Change in Net Working Capital (NWC) is negative $781 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "FY 2026 Capital Expenditures (CapEx) is $594 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Capital Expenditures (CapEx) is $594 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-009",
+      "description": "FY 2027E Revenue guidance (midpoint) is approximately $46,000 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2027E Revenue guidance (midpoint) is approximately $46,000 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-010",
+      "description": "Revenue Compound Annual Growth Rate (CAGR) from FY 2024 to FY 2027E is 9.69%.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Revenue Compound Annual Growth Rate (CAGR) from FY 2024 to FY 2027E is 9.69%.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-011",
+      "description": "FY 2031 projected revenue is $66,585.80 million.",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2031 projected revenue is $66,585.80 million.",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-012",
+      "description": "FY 2026 Adjusted EBITDA is $14,745.00 million.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY 2026 Adjusted EBITDA is $14,745.00 million.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-013",
+      "description": "Response states the total enterprise value is approximately $239,207.07 million.",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states the total enterprise value is approximately $239,207.07 million.",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 25,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

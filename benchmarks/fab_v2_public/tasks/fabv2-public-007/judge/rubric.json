@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "States the new CEO will be Charles D. Young",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States the new CEO will be Charles D. Young",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "States the new CEO will start October 1, 2025",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States the new CEO will start October 1, 2025",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "1-Calendar Day change is equal to (2.79%)",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "1-Calendar Day change is equal to (2.79%)",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "14-Calendar Day change is equal to 0.80%",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "14-Calendar Day change is equal to 0.80%",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "30-Calendar Day change is equal to 2.20%",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "30-Calendar Day change is equal to 2.20%",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "States that there was negative market sentiment based on the 1-Calendar Day return metrics",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States that there was negative market sentiment based on the 1-Calendar Day return metrics",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "States that there was positive market sentiment based on the 14-Calendar Day returns metrics",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States that there was positive market sentiment based on the 14-Calendar Day returns metrics",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "States that there was positive market sentiment based on the 30-Calendar Day returns metrics",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States that there was positive market sentiment based on the 30-Calendar Day returns metrics",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 7,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

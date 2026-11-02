@@ -14,6 +14,7 @@ class TaskSpec:
     artifacts: list[dict]
     judge: dict
     metadata: dict = field(default_factory=dict)
+    capabilities: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

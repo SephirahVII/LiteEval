@@ -30,6 +30,8 @@ jobs:
         run: python examples/run_finance_benchmark.py
       - name: Execute native directory benchmark with real subprocesses
         run: python examples/run_native_benchmark.py
+      - name: Validate and publish native FAB public package without model calls
+        run: python examples/prepare_fab_package.py
 
   docker-acceptance:
     runs-on: ubuntu-latest

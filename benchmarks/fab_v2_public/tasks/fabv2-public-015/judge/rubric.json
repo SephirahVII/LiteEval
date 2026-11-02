@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Merger consideration was $229.00 per share in cash",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Merger consideration was $229.00 per share in cash",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "Shares outstanding were 186,789,367",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Shares outstanding were 186,789,367",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "Implied equity value was $42,774.77 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Implied equity value was $42,774.77 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "Cash and cash equivalents at December 31, 2022 were $319.94 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Cash and cash equivalents at December 31, 2022 were $319.94 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Short-term investments at December 31, 2022 were $1,415.13 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Short-term investments at December 31, 2022 were $1,415.13 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "Seagen had no long-term debt outstanding at December 31, 2022",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Seagen had no long-term debt outstanding at December 31, 2022",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "Enterprise Value was $41,039.70 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Enterprise Value was $41,039.70 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "FY2022 total revenues were $1,962.41 million",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "FY2022 total revenues were $1,962.41 million",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-009",
+      "description": "EV / FY2022 Revenue was 20.91x",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "EV / FY2022 Revenue was 20.91x",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 15,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

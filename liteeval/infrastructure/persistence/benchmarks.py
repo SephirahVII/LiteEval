@@ -17,7 +17,7 @@ class BenchmarkRepository:
                              (project_id, package.id, package.version)).fetchone()
             if old:
                 if old['digest'] != package.digest: raise Conflict('Version already published with different content')
-                return dict(old) | {'reused': True}
+                return dict(old) | {'manifest': json.loads(old['manifest']), 'reused': True}
             id_ = uid()
             db.execute('INSERT INTO benchmark_releases VALUES (?,?,?,?,?,?,?)',
                        (id_, project_id, package.id, package.version, package.digest, encoded(content), now()))

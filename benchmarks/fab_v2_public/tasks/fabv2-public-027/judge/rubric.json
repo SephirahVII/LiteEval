@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Implied Per Share Equity Value using Exit Multiple Method is $419.21.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Implied Per Share Equity Value using Exit Multiple Method is $419.21.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "Implied Per Share Equity Value using Perpetual Growth Method is $521.62.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Implied Per Share Equity Value using Perpetual Growth Method is $521.62.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "Response states that the Perpetual Growth Method yields a higher per share equity value.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states that the Perpetual Growth Method yields a higher per share equity value.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 27,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

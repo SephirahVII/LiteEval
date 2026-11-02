@@ -12,6 +12,13 @@ def export_execution(service, project_id, execution_id, destination):
     with zipfile.ZipFile(destination, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('execution.json', encoded(data))
         archive.writestr('events.jsonl', '\n'.join(encoded(e) for e in data['events']) + '\n')
+        saved = set()
+        for event in data['events']:
+            payload = event['payload']
+            sha = payload.get('blob_sha256') if event['kind'] == 'model_response_raw' else None
+            if sha and sha not in saved:
+                archive.writestr('raw-responses/' + sha + '.json', service.blobs.get(sha))
+                saved.add(sha)
         report = io.StringIO(newline=''); writer = csv.writer(report)
         writer.writerow(['task_id', 'execution_status', 'grading_outcome', 'score', 'wall_time_ms'])
         for task in result['tasks']:

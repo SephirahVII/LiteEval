@@ -1,0 +1,40 @@
+schema_version = 1
+[task]
+id = "fabv2-public-027"
+title = "FAB v2 public row 27"
+category = "Financial Modeling"
+tags = ["finance", "fab-v2", "public", "research"]
+[task.metadata]
+source_row = 27
+expert_time_minutes = 90
+question_sha256 = "187f769b40e812c6297a5cf460a57b0a4e0706030c6a6a29455288b3e81a3745"
+repository = "https://github.com/vals-ai/finance-agent-v2"
+commit = "03c7c432b645f42f81ef3c13957100b182217d7c"
+source_csv_sha256 = "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e"
+methodology = "adapted_public_single_judge"
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "response.md"
+required = true
+max_bytes = 1000000
+[[artifacts]]
+path = "sources.json"
+required = false
+[[artifacts]]
+path = "calculations.json"
+required = false
+[judge]
+[[judge.checks]]
+id = "fab-v2-rubric"
+type = "llm_rubric"
+connection_slot = "judge"
+rubric_file = "judge/rubric.json"
+submission_paths = ["response.md"]
+timeout_seconds = 180
+weight = 1
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 1

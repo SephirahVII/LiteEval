@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Gross margin declines between 2/28/2024 and 2/28/2025.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Gross margin declines between 2/28/2024 and 2/28/2025.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "The response states the decline in gross margin between 2/28/2024 and 2/28/2025 is driven primarily by higher cost of sales rather than weaker revenue performance.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The response states the decline in gross margin between 2/28/2024 and 2/28/2025 is driven primarily by higher cost of sales rather than weaker revenue performance.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "The response states plant depreciation is the cost of sales line item that drives the majority of the change in gross margin between periods.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The response states plant depreciation is the cost of sales line item that drives the majority of the change in gross margin between periods.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "The plant depreciation for cost of sales increases 2,149.47% from 2/28/2024 and 2/28/2025.",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The plant depreciation for cost of sales increases 2,149.47% from 2/28/2024 and 2/28/2025.",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Reported change in gross margin between 2/28/2024 and 2/28/2025 is -88.62 percentage points.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Reported change in gross margin between 2/28/2024 and 2/28/2025 is -88.62 percentage points.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "Normalized change in gross margin, using 2025 reported gross margin versus 2024 gross margin adjusted for plant depreciation, is 34.58 percentage points.",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Normalized change in gross margin, using 2025 reported gross margin versus 2024 gross margin adjusted for plant depreciation, is 34.58 percentage points.",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "The response states the normalized result shows the gross margin deterioration is overstated on a reported basis because 2024 plant depreciation distorts comparability.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The response states the normalized result shows the gross margin deterioration is overstated on a reported basis because 2024 plant depreciation distorts comparability.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "The response states plant depreciation is more likely to increase throughout 2026.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The response states plant depreciation is more likely to increase throughout 2026.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-009",
+      "description": "The response states the 2026 directional view is based on ongoing plant construction or buildout.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The response states the 2026 directional view is based on ongoing plant construction or buildout.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 18,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

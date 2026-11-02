@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Sponsor equity in the sources of funds is $6,300.07 million",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Sponsor equity in the sources of funds is $6,300.07 million",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "Exit Enterprise Value is $13,483.54 million",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Exit Enterprise Value is $13,483.54 million",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "Exit Equity Value is $13,976.13 million",
+      "weight": 3.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Exit Equity Value is $13,976.13 million",
+        "modifiers": {
+          "severity": 3.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "Sponsor IRR is 17.27%.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Sponsor IRR is 17.27%.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Sponsor MOIC is 2.22x.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Sponsor MOIC is 2.22x.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 26,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

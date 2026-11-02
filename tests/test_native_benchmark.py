@@ -71,6 +71,7 @@ class NativeBenchmarkTest(unittest.IsolatedAsyncioTestCase):
         a, b = self.publish(), self.publish()
         self.assertEqual(a['id'], b['id'])
         self.assertTrue(b['reused'])
+        self.assertEqual(a['manifest'], b['manifest'])
         prompt = self.package / 'tasks/growth-001/prompt.md'
         prompt.write_text(prompt.read_text() + 'Changed prompt', encoding='utf-8')
         with self.assertRaises(Conflict): self.publish()

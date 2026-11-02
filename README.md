@@ -1,6 +1,6 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.0**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.1**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography，不包含前端。首次运行先执行 `python -m pip install -e .`。
 
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
@@ -20,17 +20,19 @@ python examples/run_native_benchmark.py
 
 ## 数据与连接能力
 
+0.4.1 将固定来源的 FAB v2 公开集转换为原生目录包：27 题、239 条逐项 rubric、原始 severity/must-pass、研究能力预检及 Partial Credit/All-Pass。`python examples/prepare_fab_package.py` 仅准备题库；新增 `liteeval.qianwen-research/v1` 使用明确保存的 API 连接进行云端检索、提取和计算，通过显式提交工具生成真实文件。已用用户配置的千问平台 Key 对公开第 3、4 题完成 Qwen/GLM 共四次研究和双 Judge 诊断，未使用 Codex 登录。结果及解析修复见 [真实试跑报告](docs/fab-qianwen-trial.md)，接入步骤见 [原生 FAB 指南](docs/fab-v2-native.md)。
+
 0.3.1 新增 Finance Agent v2 官方公开集的固定来源导入与真实模型试跑脚本：27 题、9 类、保留原始 rubric/权重/must-pass，导入后发布不可变版本。可先只准备题库，再运行小规模诊断与导出。方法、运行步骤和实际结果见 [FAB v2 接入与试跑报告](docs/finance-agent-v2.md)。
 
 0.3.0 新增项目级模型连接与 API Key 加密保存，可供 HTTP Agent、直接模型调用和 LLM Judge 使用；新增运行中本地日志的游标查询、Target/Judge/重试用量记录，以及实验或单条 Run 的 JSON/JSONL/CSV/ZIP 导出。数据库升级到 schema 5。完整配置、请求示例、统计口径和边界见 [连接与 Rollout 操作指南](docs/connections-and-rollouts.md)。User Agent 暂不纳入本轮。
 
 | 目标 | 已实现 | 验证情况 |
 | --- | --- | --- |
-| 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环实测；Judge 用本地模拟服务验证协议，真实模型需要配置后联调 |
+| 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环实测；Qianwen 研究 Harness 与两种真实 Judge 已完成公开两题诊断 |
 | 可恢复评测服务 | Case 并发、Agent/Judge 独立重试、取消、租约心跳、崩溃接管、结果写入隔离、提交幂等、项目密钥、原始响应与工件 | 本地集成测试覆盖并发、重试、取消、恢复和鉴权 |
-| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证 | SDK、真实子进程/文件操作已验证；Codex 使用替身 CLI，Docker 尚未启动真实容器 |
+| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证 | SDK、真实子进程/文件和 Linux CI 实际 Docker 已验证；Codex Adapter 仅替身 CLI 测试，本轮研究未使用它 |
 
-这是可以接入自己的 HTTP Agent 的后端 MVP。实际生产服务、真实模型质量校准和 Codex/Docker 环境验收仍需按下面文档完成。
+这是可以接入自己的 HTTP Agent 和目录研究 Harness 的后端 MVP。真实 Qianwen 模型试跑见上述报告，Docker 已通过 Linux CI 的实际容器验收；正式生产部署、更多题目的质量校准与其他框架接入仍需继续完成。
 
 ## 一键体验
 

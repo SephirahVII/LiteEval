@@ -1,0 +1,1 @@
+For NASDAQ: FTAI, NYSE: AER, and NASDAQ: WLFC, using market prices as of December 31, 2025 and balance sheet data as of December 31, 2025 for NYSE: AER and September 30, 2025 for NASDAQ: FTAI and NASDAQ: WLFC, which company is most leveraged relative to the peer set based on price to book value, debt to equity, and debt to total capital?

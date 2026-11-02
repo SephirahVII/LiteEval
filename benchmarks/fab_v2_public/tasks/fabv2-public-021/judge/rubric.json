@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "In BROS FY 2025, the minimum beat / (miss) % in new store openings between actual and the guidance is (3.75%)",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "In BROS FY 2025, the minimum beat / (miss) % in new store openings between actual and the guidance is (3.75%)",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "In BROS FY 2025, the maximum beat / (miss) % in new store openings between actual and the guidance is (3.75%)",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "In BROS FY 2025, the maximum beat / (miss) % in new store openings between actual and the guidance is (3.75%)",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "In CAVA FY 2025, the minimum beat / (miss) % in new store openings between actual and the midpoint of the guidance range is 4.35%",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "In CAVA FY 2025, the minimum beat / (miss) % in new store openings between actual and the midpoint of the guidance range is 4.35%",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "In CAVA FY 2025, the maximum beat / (miss) % in new store openings between actual and the midpoint of the guidance range is 12.50%",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "In CAVA FY 2025, the maximum beat / (miss) % in new store openings between actual and the midpoint of the guidance range is 12.50%",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Conclude that Cava was more conservative on the new store open guidance",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Conclude that Cava was more conservative on the new store open guidance",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 21,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

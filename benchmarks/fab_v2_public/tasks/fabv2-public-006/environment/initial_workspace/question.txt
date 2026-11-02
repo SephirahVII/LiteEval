@@ -1,0 +1,1 @@
+Compare the inventory efficiency of NYSE: HD and NYSE: LOW for FY 2024. Calculate the actual days in fiscal year, average inventory and days inventory outstanding (based on actual days) for each company. Which company turns its inventory faster and what is the difference in DIO (Days Inventory Outstanding) between the two companies?

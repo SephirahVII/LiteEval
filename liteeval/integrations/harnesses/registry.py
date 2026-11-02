@@ -3,6 +3,8 @@ from liteeval.integrations.harnesses.native import CommandAgentHarness, ModelAge
 from liteeval.domain.values import digest
 import hashlib
 from pathlib import Path
+from liteeval import __version__
+from liteeval.integrations.harnesses.qianwen_research import QianwenResearchHarness
 
 
 class HarnessRegistry:
@@ -13,11 +15,16 @@ class HarnessRegistry:
                                     for p in sorted(root.rglob('*.py'))})
 
     def resolve(self, project_id, reference, role):
+        if reference == 'liteeval.qianwen-research/v1' and role == 'agent':
+            spec = {'id': reference, 'role': role, 'implementation_version': __version__, 'build_digest': self.build_digest,
+                    'protocol': 'qianwen.responses/v1', 'capabilities': ['web.search', 'web.fetch'],
+                    'tools': ['web_search', 'web_extractor', 'code_interpreter', 'submit_answer']}
+            return QianwenResearchHarness(), {'digest': digest(spec), 'spec': spec}
         if reference == 'liteeval.native/v1' and role == 'evaluation':
-            spec = {'id': reference, 'role': role, 'implementation_version': '0.4.0', 'build_digest': self.build_digest, 'protocol': 'liteeval.task/v1'}
+            spec = {'id': reference, 'role': role, 'implementation_version': __version__, 'build_digest': self.build_digest, 'protocol': 'liteeval.task/v1'}
             return NativeEvaluationHarness(), {'digest': digest(spec), 'spec': spec}
         if reference == 'liteeval.model-json/v1' and role == 'agent':
-            spec = {'id': reference, 'role': role, 'implementation_version': '0.4.0', 'build_digest': self.build_digest, 'protocol': 'liteeval.agent/v1'}
+            spec = {'id': reference, 'role': role, 'implementation_version': __version__, 'build_digest': self.build_digest, 'protocol': 'liteeval.agent/v1'}
             return ModelAgentHarness(), {'digest': digest(spec), 'spec': spec}
         row = self.repository.harness(project_id, reference)
         if row['role'] != role:

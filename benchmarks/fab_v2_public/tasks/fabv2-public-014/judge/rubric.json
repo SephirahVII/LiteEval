@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Offer price is $35.00 per share.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Offer price is $35.00 per share.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "SkyWater FY 2025 revenue is $442,139 thousand",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "SkyWater FY 2025 revenue is $442,139 thousand",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "SkyWater FY 2025 adjusted EBITDA is $53,168 thousand",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "SkyWater FY 2025 adjusted EBITDA is $53,168 thousand",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "Implied Transaction Value is approximately $1.8 billion (or $1,800 million).",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Implied Transaction Value is approximately $1.8 billion (or $1,800 million).",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Transaction Value / FY 2025 Revenue is approximately 4.1x.",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Transaction Value / FY 2025 Revenue is approximately 4.1x.",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "Transaction Value / FY 2025 Adjusted EBITDA is approximately 34.0x.",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Transaction Value / FY 2025 Adjusted EBITDA is approximately 34.0x.",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "The valuation does not primarily reflect conventional semiconductor foundry economics.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The valuation does not primarily reflect conventional semiconductor foundry economics.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "The valuation reflects strategic domestic manufacturing value.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The valuation reflects strategic domestic manufacturing value.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-009",
+      "description": "The valuation reflects a quantum vertical-integration premium.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The valuation reflects a quantum vertical-integration premium.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-010",
+      "description": "The quantum vertical-integration premium is identified as the primary valuation driver.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "The quantum vertical-integration premium is identified as the primary valuation driver.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 14,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

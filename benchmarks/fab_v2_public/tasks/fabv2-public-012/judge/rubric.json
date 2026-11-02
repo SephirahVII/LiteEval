@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "LULU GAAP EBITDA margin is 27.88%",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "LULU GAAP EBITDA margin is 27.88%",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "LULU EV/EBITDA is 11.47x",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "LULU EV/EBITDA is 11.47x",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "VSCO GAAP EBITDA margin is 9.12%",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "VSCO GAAP EBITDA margin is 9.12%",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "VSCO EV/EBITDA is 7.03x",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "VSCO EV/EBITDA is 7.03x",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Response states LULU traded at the higher EV/EBITDA multiple at 11.47x versus VSCO at 7.03x",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states LULU traded at the higher EV/EBITDA multiple at 11.47x versus VSCO at 7.03x",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "Response states LULU had the higher EBITDA margin at 27.88% versus VSCO at 9.12%",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states LULU had the higher EBITDA margin at 27.88% versus VSCO at 9.12%",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 12,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

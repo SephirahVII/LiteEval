@@ -1,0 +1,12 @@
+Using a Discounted Cash Flow Analysis (DCF), what would the enterprise value of NYSE: CRM be assuming the below:
+- Exclude value of "strategic investments"
+- Future revenue growth:
+   - FY2027 revenue use the midpoint of the guidance provided 
+   - FY2028 through FY2031 use the CAGR from FY2024 to FY2027 (guidance from previous step) 
+- Adjusted EBITDA is defined as Operating Income + D&A + Restructuring
+- For D&A assume this includes standard D&A as well as amortization of capitalized contracts 
+- Tax rate of 25%
+- Discount rate of 8%
+- Use Exit Multiple Method with a terminal EBITDA multiple of 10x
+- Hold the following metrics constant as % of revenue from fiscal year 2027 until fiscal year 2031: operating income margin, adjusted EBITDA margin, stock-based compensation, change in NWC, and CapEx
+- Project cash flow through FY2031

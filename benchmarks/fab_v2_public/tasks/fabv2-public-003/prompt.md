@@ -1,0 +1,4 @@
+Research the question below using primary company disclosures and filings. Preserve the dates, financial conventions and numeric tolerances in the question. If a date is ambiguous, state the interpretation; do not silently substitute the latest fiscal year. Use code or a calculator for arithmetic. Cite source URLs and reporting dates. Write the complete answer to response.md in your workspace. Optionally save source URLs in sources.json and calculations in calculations.json. Do not inspect benchmark answers, private grading files, other workspaces or the parent repository. Do not search the entire benchmark question verbatim. State unavailable evidence instead of inventing it.
+
+QUESTION:
+Who do NASDAQ: EA and NASDAQ: TTWO see as competitors in their business? Include any disclosure on direct competitors and non-interactive entertainment competitors. Which business provides more detailed disclosure on their competitive landscape?

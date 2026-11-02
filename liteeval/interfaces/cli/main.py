@@ -29,6 +29,8 @@ def main():
     owner=sub.add_parser('owner-init');owner.add_argument('--username',default='owner')
     bench = sub.add_parser('benchmark'); actions = bench.add_subparsers(dest='action', required=True)
     validate = actions.add_parser('validate'); validate.add_argument('path')
+    convert = actions.add_parser('convert-fab'); convert.add_argument('source'); convert.add_argument('destination')
+    convert.add_argument('--rows'); convert.add_argument('--docker-image')
     publish = actions.add_parser('import'); publish.add_argument('path'); publish.add_argument('--project', required=True)
     releases = actions.add_parser('releases'); releases.add_argument('--project', required=True)
     execute = actions.add_parser('run'); execute.add_argument('release_id'); execute.add_argument('--project', required=True)
@@ -36,8 +38,21 @@ def main():
     execute.add_argument('--target-connection'); execute.add_argument('--judge-connection'); execute.add_argument('--trusted-local', action='store_true')
     export = actions.add_parser('export'); export.add_argument('execution_id'); export.add_argument('--project', required=True); export.add_argument('--output', required=True)
     rejudge = actions.add_parser('rejudge'); rejudge.add_argument('execution_id'); rejudge.add_argument('--project', required=True)
+    rejudge.add_argument('--judge-connection')
     harness = sub.add_parser('harness'); harness.add_argument('path'); harness.add_argument('--project', required=True)
-    args=parser.parse_args();store=Store(args.db)
+    args=parser.parse_args()
+    if args.command == 'benchmark' and args.action in ('validate', 'convert-fab'):
+        if args.action == 'convert-fab':
+            from liteeval.integrations.benchmarks.fab_package import convert_fab
+            rows = [int(n.strip()) for n in args.rows.split(',')] if args.rows else None
+            result = convert_fab(args.source, args.destination, rows, args.docker_image)
+        else:
+            from liteeval.infrastructure.sources.package import DirectoryLoader
+            package = DirectoryLoader().load(args.path)
+            result = {'valid': True, 'id': package.id, 'version': package.version, 'digest': package.digest, 'task_count': len(package.tasks)}
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    store=Store(args.db)
     if args.command in ('benchmark', 'harness'):
         from liteeval.bootstrap import benchmark_service
         from liteeval.infrastructure.sources.harness import load_harness
@@ -46,15 +61,12 @@ def main():
         if args.command == 'harness':
             spec, sha = load_harness(args.path, service.blobs)
             result = {'harness_revision_id': service.repository.register(args.project, spec['definition']['harness']['id'], spec['definition']['harness']['role'], sha, spec), 'digest': sha}
-        elif args.action == 'validate':
-            package = service.loader.load(args.path)
-            result = {'valid': True, 'id': package.id, 'version': package.version, 'digest': package.digest, 'task_count': len(package.tasks)}
         elif args.action == 'import': result = service.publish(args.project, args.path)
         elif args.action == 'releases': result = service.repository.list_releases(args.project)
         elif args.action == 'run':
             result = asyncio.run(service.run(args.project, args.release_id, args.agent_harness, evaluation_ref=args.evaluation_harness,
                 target_connection=args.target_connection, judge_connection=args.judge_connection, trusted_local=args.trusted_local))
-        elif args.action == 'rejudge': result = asyncio.run(service.rejudge(args.project, args.execution_id))
+        elif args.action == 'rejudge': result = asyncio.run(service.rejudge(args.project, args.execution_id, judge_connection=args.judge_connection))
         else:
             export_execution(service, args.project, args.execution_id, args.output)
             result = {'export': str(Path(args.output).resolve())}

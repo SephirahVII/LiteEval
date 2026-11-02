@@ -9,6 +9,8 @@ import tomllib
 from liteeval.domain.benchmark import Package, TaskSpec, fields, finite
 from liteeval.domain.paths import relative_path
 from liteeval.domain.values import digest
+from liteeval.domain.rubrics import validate_rubric
+from liteeval.domain.capabilities import validate_capabilities
 
 
 class DirectoryLoader:
@@ -72,7 +74,9 @@ class DirectoryLoader:
             fields(value, ['schema_version', 'task', 'input', 'environment', 'requirements', 'budget', 'artifacts', 'judge'], name)
             if value.get('schema_version') != 1:
                 raise ValueError('Unsupported task schema_version')
-            meta = value['task']; fields(meta, ['id', 'title', 'category', 'tags'], 'task')
+            meta = value['task']; fields(meta, ['id', 'title', 'category', 'tags', 'metadata'], 'task')
+            if not isinstance(meta.get('metadata', {}), dict):
+                raise ValueError('Task metadata must be an object')
             task_id = meta['id']
             if not isinstance(task_id, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,99}', task_id) or task_id in ids:
                 raise ValueError('Invalid or duplicate task id')
@@ -104,9 +108,8 @@ class DirectoryLoader:
                 raise ValueError('Invalid memory limit')
             requirements_task = value.get('requirements', {})
             fields(requirements_task, ['capabilities'], 'requirements')
-            capabilities = requirements_task.get('capabilities', []) + requirements.get('target_capabilities', [])
-            if any(c not in ('workspace.read', 'workspace.write', 'process.execute') for c in capabilities):
-                raise ValueError('Unsupported task capability')
+            capabilities = sorted(set(validate_capabilities(requirements_task.get('capabilities', []))) |
+                                  set(validate_capabilities(requirements.get('target_capabilities', []))))
             workspace = {}
             if env.get('initial_workspace'):
                 prefix = resource(env['initial_workspace']) + '/'
@@ -156,13 +159,14 @@ class DirectoryLoader:
                     argv = check.get('command', [])
                     if not isinstance(argv, list) or not argv or not all(isinstance(a, str) and a for a in argv):
                         raise ValueError('Judge requires command argv')
-                elif check['type'] == 'llm':
+                elif check['type'] in ('llm', 'llm_rubric'):
                     if check.get('connection_slot', 'judge') != 'judge':
                         raise ValueError('Only the judge connection slot is supported')
                     rubric = check['rubric_file']
                     if not rubric.startswith('judge/'):
                         raise ValueError('Rubric must be private')
-                    decoded(read(resource(rubric)))
+                    rubric_value = decoded(read(resource(rubric)))
+                    if check['type'] == 'llm_rubric': validate_rubric(rubric_value)
                     for output in check.get('submission_paths', []):
                         if output not in artifact_paths:
                             raise ValueError('Judge references undeclared submission')
@@ -177,6 +181,6 @@ class DirectoryLoader:
                 raise ValueError('Unsupported aggregation')
             finite(policy.get('pass_threshold', 1), 'pass threshold', 0, 1)
             compiled = {'checks': checks, 'aggregate': policy, 'resources': private, 'ground_truth_file': gt}
-            tasks.append(TaskSpec(task_id, prompt, workspace, dict(environment), budget, artifacts, compiled, meta))
+            tasks.append(TaskSpec(task_id, prompt, workspace, dict(environment), budget, artifacts, compiled, meta, capabilities))
         manifest = {'schema_version': 1, 'source_files': files, 'dataset': conf, 'tasks': [asdict(t) for t in tasks]}
         return Package(identity['id'], identity['version'], digest(manifest), manifest, tasks, blobs)

@@ -1,0 +1,62 @@
+{
+  "benchmark_id": "finance-agent-v2-public",
+  "repository": "https://github.com/vals-ai/finance-agent-v2",
+  "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+  "path": "data/public.csv",
+  "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+  "license": "MIT",
+  "question_count": 27,
+  "methodology": "https://www.vals.ai/benchmarks/fabv2",
+  "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results.",
+  "conversion": {
+    "schema_version": 1,
+    "selected_rows": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "exported_task_count": 27,
+    "required_capabilities": [
+      "workspace.read",
+      "workspace.write",
+      "process.execute",
+      "web.search",
+      "web.fetch"
+    ],
+    "grading": "single_model_binary_rubric_diagnostic",
+    "official_tools": [
+      "edgar_search",
+      "web_search",
+      "parse_html_page",
+      "retrieve_information",
+      "calculator",
+      "price_history"
+    ],
+    "official_leaderboard_comparable": false,
+    "environment": "workspace"
+  }
+}

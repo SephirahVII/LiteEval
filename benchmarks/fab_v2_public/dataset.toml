@@ -1,0 +1,19 @@
+schema_version = 1
+[benchmark]
+id = "fab-v2-public"
+name = "FAB v2 Public — native rubric diagnostic"
+version = "public-03c7c432b645-native1-workspace"
+description = "Pinned public questions; adapted Harness and single-model grading, not official leaderboard methodology"
+license = "MIT"
+[tasks]
+include = ["tasks/*/task.toml"]
+[defaults]
+environment_profile = "research"
+target_timeout_seconds = 7200
+judge_timeout_seconds = 180
+[environment_profiles.research]
+type = "workspace"
+[harness_requirements]
+evaluation_protocol = "liteeval.task/v1"
+default_evaluation_harness = "liteeval.native/v1"
+target_capabilities = ["workspace.read", "workspace.write", "process.execute", "web.search", "web.fetch"]

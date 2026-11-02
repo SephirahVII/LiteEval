@@ -1,0 +1,4 @@
+Research the question below using primary company disclosures and filings. Preserve the dates, financial conventions and numeric tolerances in the question. If a date is ambiguous, state the interpretation; do not silently substitute the latest fiscal year. Use code or a calculator for arithmetic. Cite source URLs and reporting dates. Write the complete answer to response.md in your workspace. Optionally save source URLs in sources.json and calculations in calculations.json. Do not inspect benchmark answers, private grading files, other workspaces or the parent repository. Do not search the entire benchmark question verbatim. State unavailable evidence instead of inventing it.
+
+QUESTION:
+For NASDAQ: VSEC, using the midpoint of any guidance ranges provided, what is the 2026 implied revenue and Adjusted EBITDA based on the Q4 2025 earnings release, and how does the implied Adjusted EBITDA margin compare to FY2023, FY2024, and FY2025 in basis points?

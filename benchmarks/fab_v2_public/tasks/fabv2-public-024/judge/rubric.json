@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "criterion-001",
+      "description": "Response states the AMZN Q1 FY2024 increase in server useful life from five years to six years is attributed to continuous improvements in hardware, software, and data center designs.",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states the AMZN Q1 FY2024 increase in server useful life from five years to six years is attributed to continuous improvements in hardware, software, and data center designs.",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-002",
+      "description": "Response states the AMZN Q1 FY2025 reduction in server useful life from six years to five years is attributed to the increased pace of technology development, particularly in artificial intelligence and machine learning.",
+      "weight": 1.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states the AMZN Q1 FY2025 reduction in server useful life from six years to five years is attributed to the increased pace of technology development, particularly in artificial intelligence and machine learning.",
+        "modifiers": {
+          "severity": 1.0,
+          "category": "must_pass"
+        }
+      }
+    },
+    {
+      "id": "criterion-003",
+      "description": "Response states AMZN Q1 FY2025 change increases depreciation expense by $217 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN Q1 FY2025 change increases depreciation expense by $217 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-004",
+      "description": "Response states AMZN FY2025 change increases depreciation expense by $1.40 billion.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN FY2025 change increases depreciation expense by $1.40 billion.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-005",
+      "description": "Response states AMZN Q1 FY2025 represents 15.50% of the FY2025 depreciation impact from the Q1 FY2025 change.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN Q1 FY2025 represents 15.50% of the FY2025 depreciation impact from the Q1 FY2025 change.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-006",
+      "description": "Response states AMZN Q1 FY2025 change reduces net income by $162 million.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN Q1 FY2025 change reduces net income by $162 million.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-007",
+      "description": "Response states AMZN FY2025 change reduces net income by $1.0 billion.",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN FY2025 change reduces net income by $1.0 billion.",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-008",
+      "description": "Response states AMZN Q1 FY2025 represents 16.20% of the FY2025 net income impact from the Q1 FY2025 change.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states AMZN Q1 FY2025 represents 16.20% of the FY2025 net income impact from the Q1 FY2025 change.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-009",
+      "description": "Response states the support shows a shift from improving server longevity in Q1 FY2024 to faster artificial intelligence and machine learning-driven technology turnover in Q1 FY2025.",
+      "weight": 2.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states the support shows a shift from improving server longevity in Q1 FY2024 to faster artificial intelligence and machine learning-driven technology turnover in Q1 FY2025.",
+        "modifiers": {
+          "severity": 2.0
+        }
+      }
+    },
+    {
+      "id": "criterion-010",
+      "description": "Response states that the shift from a useful life extension in Q1 FY2024 to a useful life reduction in Q1 FY2025, combined with Q1 2025 representing only 15.50% of the full year depreciation impact, suggests that AI and ML investment accelerated as FY2025 progressed with the majority of infrastructure reinvestment occurring in later quarters",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Response states that the shift from a useful life extension in Q1 FY2024 to a useful life reduction in Q1 FY2025, combined with Q1 2025 representing only 15.50% of the full year depreciation impact, suggests that AI and ML investment accelerated as FY2025 progressed with the majority of infrastructure reinvestment occurring in later quarters",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-011",
+      "description": "States that most of the FY2025 depreciation and net income impact occurs after Q1 2025",
+      "weight": 1.0,
+      "must_pass": false,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "States that most of the FY2025 depreciation and net income impact occurs after Q1 2025",
+        "modifiers": {
+          "severity": 1.0
+        }
+      }
+    },
+    {
+      "id": "criterion-012",
+      "description": "Concludes that artificial intelligence and machine learning-related infrastructure investment increased as FY2025 progressed.",
+      "weight": 2.0,
+      "must_pass": true,
+      "source": {
+        "operator": "finance_agent_v2_operator",
+        "criteria": "Concludes that artificial intelligence and machine learning-related infrastructure investment increased as FY2025 progressed.",
+        "modifiers": {
+          "severity": 2.0,
+          "category": "must_pass"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source_row": 24,
+    "benchmark_source": {
+      "benchmark_id": "finance-agent-v2-public",
+      "repository": "https://github.com/vals-ai/finance-agent-v2",
+      "commit": "03c7c432b645f42f81ef3c13957100b182217d7c",
+      "path": "data/public.csv",
+      "sha256": "27b48c08a6099bc076b4194cac7cefe295082b9aedcbc67f4fedfa70468b427e",
+      "license": "MIT",
+      "question_count": 27,
+      "methodology": "https://www.vals.ai/benchmarks/fabv2",
+      "note": "Pinned public v2 samples; local runs are not official Vals leaderboard results."
+    }
+  }
+}

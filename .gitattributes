@@ -7,4 +7,8 @@ benchmarks/finance_agent_v2/public.csv -text -whitespace
 *.yml text eol=lf
 .gitattributes text eol=lf
 benchmarks/native_finance/** -text
+benchmarks/fab_v2_public/** -text
+# These files embed the upstream questions verbatim, including original trailing spaces.
+benchmarks/fab_v2_public/**/prompt.md -whitespace
+benchmarks/fab_v2_public/**/question.txt -whitespace
 *.bin -text -diff

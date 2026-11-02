@@ -1,6 +1,6 @@
 # 后端架构与运行口径
 
-更新：2026-11-02，软件 0.4.0 / SQLite schema 6。
+更新：2026-11-02，软件 0.4.1 / SQLite schema 6。
 
 本轮直接重组后端，不保留旧 Python 模块导入路径或兼容 facade。先前提案中的 fallback、旧路径转发及以旧版本兼容为验收目标的安排取消。保留有用的项目、凭据、Trace、Dataset 服务实现，并迁入新模块；它们不是目录 Benchmark 的自动回退路径。
 
@@ -46,11 +46,13 @@ DirectoryLoader → TaskSpec + 资源清单 → Benchmark Release
                   检查、聚合、持久化、导出/重评
 ```
 
-Agent Harness 可以是注册的命令实现，或内置 JSON action 模型循环。Evaluation Harness 可以是内置 command/LLM Judge，或协议化的外部离线评分 runner。平台统一拥有工作区、阶段及持久化；外部评分 runner 不再触发 native 检查，不重复计分。角色、配置和资源 digest 固定到运行计划。
+Agent Harness 可以是注册的命令实现、内置 JSON action 模型循环，或 Qianwen Responses 研究实现。后者以云端 web_search/web_extractor/code_interpreter 研究，通过显式 submit_answer 在本地写入产物，云端内部只能按供应商返回的事件观测。Evaluation Harness 可以是内置 command/LLM Judge，或协议化的外部离线评分 runner。平台统一拥有工作区、阶段及持久化；外部评分 runner 不再触发 native 检查，不重复计分。角色、配置和资源 digest 固定到运行计划。
 
 目录模式明确分开 ground_truth、rubric、test 和 submission；不会把评分资源传给 Target。初始化支持二进制文件，采集保存实际文件 bytes；工作区删除后仍可重评和导出。Workspace 是可信本地模式，Docker 是独立容器模式，二者不自动降级。
 
-实际格式、命令、验收方式及未实现项见 [目录 Benchmark 指南](benchmark-packages.md)。离线两题验收是确定性进程执行，不是 LLM 或官方 FAB 质量成绩。本机 Docker 未实跑，独立 Linux CI 用于进一步验收。
+FAB v2 适配已使用同一目录链路，固定 27 道公开题和 239 条原始检查。Domain 中的 rubric 聚合负责判定完整性、severity 与 must-pass，模型不决定计算公式；TaskSpec 能力要求与 Harness 声明进入预检。Qwen/GLM 已对两道公开题真实研究和诊断评分，普通文件 Harness 仍会因缺少研究能力而被阻止。详见 [真实试跑证据](fab-qianwen-trial.md)。
+
+实际格式、命令、验收方式及未实现项见 [目录 Benchmark 指南](benchmark-packages.md)。离线两题验收是确定性进程执行。本机缺少 Docker；[独立 Linux CI](https://github.com/SephirahVII/LiteEval/actions/runs/41340058156) 已通过实际容器验收。Qianwen 云端计算与该 Docker 验收是两个不同环境。
 
 ## Dataset/Trace 服务的独立口径
 

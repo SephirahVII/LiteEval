@@ -1,0 +1,4 @@
+Research the question below using primary company disclosures and filings. Preserve the dates, financial conventions and numeric tolerances in the question. If a date is ambiguous, state the interpretation; do not silently substitute the latest fiscal year. Use code or a calculator for arithmetic. Cite source URLs and reporting dates. Write the complete answer to response.md in your workspace. Optionally save source URLs in sources.json and calculations in calculations.json. Do not inspect benchmark answers, private grading files, other workspaces or the parent repository. Do not search the entire benchmark question verbatim. State unavailable evidence instead of inventing it.
+
+QUESTION:
+For NASDAQ:CZR, calculate Adjusted EBITDAR for 2021-2024 by adding Rent Obligations (specifically the GLPI and VICI leases). Then calculate YoY growth rate in EBITDAR as well as the 3-year CAGR from '21A-24A.
