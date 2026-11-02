@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LiteEval 控制台 · 原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============ 设计基调：深色观测台（参照 STEALTH observability） ============ */
+:root {
+  --paper: #0A0C10;
+  --panel: #12151C;
+  --panel-warm: #171B24;
+  --sand: #1C212C;
+  --line: rgba(255,255,255,.07);
+  --line-strong: rgba(255,255,255,.14);
+  --ink: #EEF2F6;
+  --ink-2: #9AA6B4;
+  --muted: #5F6B7A;
+  --accent: #3DD68C;
+  --accent-deep: #7FE7B4;
+  --accent-soft: rgba(61,214,140,.12);
+  --pass: #3DD68C;
+  --pass-soft: rgba(61,214,140,.12);
+  --fail: #F1596B;
+  --fail-soft: rgba(241,89,107,.12);
+  --warn: #F5C044;
+  --warn-soft: rgba(245,192,68,.12);
+  --info: #7C9CE8;
+  --info-soft: rgba(124,156,232,.12);
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
+  --sans: "Inter", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --serif: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+/* 细腻纸面纹理：3px 间隔的极淡横线 */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(203,191,172,.05) 3px 4px);
+  pointer-events: none; z-index: 0;
+}
+#app { position: relative; z-index: 1; }
+::selection { background: var(--accent-soft); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+button { font-family: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: none; box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+}
+.mono { font-family: var(--mono); }
+.micro-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+}
+
+/* ============ 按钮 ============ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--sand); color: var(--ink);
+  padding: 7px 16px; font-size: 13px; font-weight: 500;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn:hover { background: #EAE0D6; border-color: var(--line-strong); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #FFF9F5; }
+.btn.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--sand); }
+.btn.danger { color: var(--fail); border-color: var(--fail); background: transparent; }
+.btn.danger:hover { background: var(--fail-soft); }
+.btn.sm { padding: 4px 12px; font-size: 12px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ============ 登录页 ============ */
+.login-wrap {
+  min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr;
+}
+.login-hero {
+  padding: 64px 56px; display: flex; flex-direction: column; justify-content: space-between;
+  border-right: 1px solid var(--line);
+}
+.login-hero .brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border: 1.5px solid var(--ink); border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 700;
+}
+.login-hero h1 {
+  font-family: var(--serif); font-size: 56px; font-weight: 400;
+  line-height: 1.18; letter-spacing: -.01em; color: var(--ink);
+}
+.login-hero h1 em { font-style: normal; color: var(--accent); }
+.login-hero .sub { color: var(--ink-2); max-width: 420px; margin-top: 18px; font-size: 15px; }
+.hero-quote {
+  font-family: var(--serif); font-size: 20px; color: var(--ink-2);
+  border-left: 2px solid var(--accent); padding-left: 18px; max-width: 400px;
+}
+.login-panel { padding: 64px 56px; display: flex; flex-direction: column; justify-content: center; }
+.login-card { max-width: 380px; width: 100%; }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink-2); }
+.field input, .field select {
+  width: 100%; padding: 10px 14px; font-size: 14px; font-family: inherit;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); color: var(--ink);
+}
+.field input:focus { border-color: var(--accent); }
+.csrf-note {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 12px; color: var(--ink-2); background: var(--panel-warm);
+  border: 1px dashed var(--line-strong); border-radius: 10px; padding: 10px 12px; margin: 18px 0;
+}
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; margin: 22px 0; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ============ 应用骨架 ============ */
+.shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+.sidebar {
+  border-right: 1px solid var(--line); padding: 20px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  position: sticky; top: 0; height: 100vh;
+}
+.sidebar .brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 20px; }
+.sidebar .brand b { font-size: 15px; letter-spacing: -.01em; }
+.sidebar .brand span { font-family: var(--mono); font-size: 10px; color: var(--muted); display: block; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-radius: 8px; font-size: 13.5px; color: var(--ink-2);
+  cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item:hover { background: var(--sand); color: var(--ink); }
+.nav-item.active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; }
+.nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); flex: none; }
+.nav-item.active .dot { background: var(--accent); }
+.nav-item .count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.sidebar-foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px; }
+.session-box { padding: 0 10px 12px; font-size: 12px; color: var(--ink-2); }
+.session-box .bar { height: 3px; background: var(--sand); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.session-box .bar i { display: block; height: 100%; background: var(--pass); transition: width 1s linear; }
+.session-box .bar i.low { background: var(--fail); }
+
+.main { padding: 0 32px 48px; min-width: 0; }
+.topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 24px;
+}
+.topbar h2 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.topbar .spacer { flex: 1; }
+.worker-pill {
+  display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px;
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; color: var(--ink-2);
+}
+
+/* 状态灯 */
+.led { width: 8px; height: 8px; border-radius: 50%; flex: none; position: relative; }
+.led.on { background: var(--pass); }
+.led.on::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid var(--pass); opacity: 0; animation: pulse 1.6s ease-in-out infinite;
+}
+.led.busy { background: var(--accent); }
+.led.busy::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid var(--accent); opacity: 0; animation: pulse 1.4s ease-in-out infinite;
+}
+.led.off { background: var(--line-strong); }
+@keyframes pulse { 0% { transform: scale(.5); opacity: .9; } 100% { transform: scale(1.4); opacity: 0; } }
+
+/* ============ 通用组件 ============ */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.kpi {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px;
+}
+.kpi .micro-label { margin-bottom: 8px; display: block; }
+.kpi .num { font-family: var(--mono); font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
+.kpi .num small { font-size: 14px; color: var(--muted); font-weight: 400; }
+.kpi .trend { font-size: 12px; margin-top: 4px; }
+.kpi .trend.up { color: var(--pass); }
+.kpi .trend.down { color: var(--fail); }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 18px;
+}
+.panel-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+}
+.panel-head h3 { font-size: 14px; font-weight: 600; }
+.panel-head .spacer { flex: 1; }
+.panel-body { padding: 16px 18px; }
+
+/* 活动流 ticker */
+.ticker {
+  display: flex; align-items: center; gap: 12px; overflow: hidden;
+  background: var(--panel-warm); border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 18px; margin-bottom: 22px; font-size: 12.5px;
+}
+.ticker .micro-label { flex: none; }
+.ticker-track { flex: 1; overflow: hidden; white-space: nowrap; color: var(--ink-2); }
+.ticker-track span { display: inline-block; animation: tick 30s linear infinite; }
+@keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* 表格 */
+table.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.grid th {
+  text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--line-strong);
+}
+table.grid td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.grid tr:last-child td { border-bottom: none; }
+table.grid tbody tr { cursor: pointer; transition: background .12s ease; }
+table.grid tbody tr:hover { background: var(--panel-warm); }
+.id-cell { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+
+/* 徽章 */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 2px 10px; border-radius: 999px; border: 1px solid transparent;
+}
+.badge.pass { color: var(--pass); background: var(--pass-soft); border-color: #CBDDBF; }
+.badge.fail { color: var(--fail); background: var(--fail-soft); border-color: #E8C4B9; }
+.badge.abstain { color: var(--ink-2); background: var(--sand); border-color: var(--line-strong); }
+.badge.error { color: var(--warn); background: var(--warn-soft); border-color: #E5D2A8; }
+.badge.running { color: var(--accent-deep); background: var(--accent-soft); border-color: #F3C9A8; }
+.badge.queued { color: var(--info); background: var(--info-soft); border-color: #C9D3E0; }
+.badge.lock { color: var(--ink-2); background: transparent; border-color: var(--line-strong); }
+.badge .led { width: 6px; height: 6px; }
+
+/* 进度条 */
+.prog { height: 6px; background: var(--sand); border-radius: 3px; overflow: hidden; min-width: 90px; }
+.prog i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .5s ease; }
+.prog.done i { background: var(--pass); }
+.prog.fail i { background: var(--fail); }
+
+/* 筛选与分页 */
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); background: transparent; border-radius: 999px;
+  padding: 4px 14px; font-size: 12.5px; color: var(--ink-2); transition: all .15s ease;
+}
+.chip:hover { border-color: var(--line-strong); }
+.chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pager { display: flex; align-items: center; gap: 8px; justify-content: flex-end; padding: 12px 18px; }
+.pager .info { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-right: auto; }
+.pager button {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink-2); font-family: var(--mono); font-size: 12px;
+}
+.pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pager button.cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Compare 视图 */
+.compare-grid { display: grid; grid-template-columns: 1fr 56px 1fr; gap: 0; align-items: stretch; }
+.compare-col { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.compare-col.winner { border-color: var(--pass); box-shadow: 0 0 0 1px var(--pass); }
+.compare-col .col-head { padding: 16px 18px; border-bottom: 1px solid var(--line); background: var(--panel-warm); }
+.compare-col .big-rate { font-family: var(--mono); font-size: 40px; font-weight: 600; letter-spacing: -.03em; }
+.vs-mark {
+  align-self: center; justify-self: center; font-family: var(--serif); font-size: 20px;
+  color: var(--muted); width: 44px; height: 44px; border: 1px solid var(--line-strong);
+  border-radius: 50%; display: grid; place-items: center; background: var(--paper);
+}
+.delta-chip { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.delta-chip.up { color: var(--pass); background: var(--pass-soft); }
+.delta-chip.flat { color: var(--ink-2); background: var(--sand); }
+.delta-chip.down { color: var(--fail); background: var(--fail-soft); }
+
+/* 抽屉与弹窗 */
+.overlay {
+  position: fixed; inset: 0; background: rgba(29,23,18,.32);
+  display: none; z-index: 40;
+}
+.overlay.show { display: block; animation: fadeIn .18s ease; }
+@keyframes fadeIn { from { opacity: 0; } }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 92vw);
+  background: var(--panel); border-left: 1px solid var(--line-strong);
+  transform: translateX(100%); transition: transform .28s cubic-bezier(.32,.72,.28,1);
+  z-index: 50; display: flex; flex-direction: column;
+}
+.drawer.show { transform: translateX(0); }
+.drawer-head { padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.raw-block {
+  font-family: var(--mono); font-size: 12px; line-height: 1.7;
+  background: #241E18; color: #E8DFD3; border-radius: 10px; padding: 14px 16px;
+  overflow-x: auto; white-space: pre;
+}
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.96);
+  width: min(480px, 92vw); background: var(--panel); border: 1px solid var(--line-strong);
+  border-radius: 16px; z-index: 60; opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease; box-shadow: 0 24px 60px rgba(29,23,18,.18);
+}
+.modal.show { opacity: 1; transform: translate(-50%,-50%) scale(1); pointer-events: auto; }
+.modal-body { padding: 24px; }
+.modal-foot { padding: 14px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 10px; }
+.conflict-diff { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 14px 0; }
+.conflict-diff .row { display: grid; grid-template-columns: 90px 1fr 1fr; border-bottom: 1px solid var(--line); }
+.conflict-diff .row:last-child { border-bottom: none; }
+.conflict-diff .cell { padding: 8px 12px; }
+.conflict-diff .cell.old { background: var(--fail-soft); color: var(--fail); text-decoration: line-through; }
+.conflict-diff .cell.new { background: var(--pass-soft); color: var(--pass); }
+
+/* Toast */
+.toasts { position: fixed; bottom: 24px; right: 24px; z-index: 90; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  background: var(--ink); color: var(--paper); border-radius: 12px; padding: 12px 18px;
+  font-size: 13px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 12px 32px rgba(29,23,18,.25); animation: toastIn .25s cubic-bezier(.32,.72,.28,1);
+  max-width: 360px;
+}
+@keyframes toastIn { from { transform: translateY(12px); opacity: 0; } }
+.toast .led { width: 7px; height: 7px; }
+
+/* 空状态 */
+.empty {
+  border: 1px dashed var(--line-strong); border-radius: 12px; padding: 36px;
+  text-align: center; color: var(--muted); font-size: 13px;
+}
+
+/* 预览运行的时间线 */
+.timeline { position: relative; padding-left: 22px; }
+.timeline::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 1px; background: var(--line-strong); }
+.timeline .ev { position: relative; padding-bottom: 14px; font-size: 12.5px; color: var(--ink-2); }
+.timeline .ev::before {
+  content: ""; position: absolute; left: -20px; top: 5px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--panel); border: 1.5px solid var(--line-strong);
+}
+.timeline .ev.hot::before { border-color: var(--accent); background: var(--accent); }
+.timeline .ev b { color: var(--ink); font-weight: 600; }
+.timeline .ev .t { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-left: 6px; }
+
+/* 页内 Tab */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.tab {
+  border: none; background: none; padding: 9px 16px; font-size: 13px; color: var(--ink-2);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s ease, border-color .15s ease;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--accent-deep); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* 日志控制台 */
+.log-console {
+  background: #241E18; color: #D8CDBC; border-radius: 12px; padding: 14px 16px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.75;
+  max-height: 420px; overflow-y: auto;
+}
+.log-console .ln { display: flex; gap: 12px; white-space: pre-wrap; word-break: break-all; }
+.log-console .ln .no { color: #6B5F52; flex: none; width: 44px; text-align: right; user-select: none; }
+.log-console .ln.warn { color: #E5B95C; }
+.log-console .ln.err { color: #E88A70; }
+.log-console .ln.tool { color: #9FC3E8; }
+.log-cursor-bar {
+  display: flex; align-items: center; gap: 10px; margin-top: 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+}
+
+/* 统计磁贴 */
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat-tile { background: var(--panel-warm); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.stat-tile .v { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-top: 2px; }
+.stat-tile .v small { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+/* token 分解条 */
+.tok-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid var(--line-strong); }
+.tok-bar i { display: block; height: 100%; }
+.tok-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); margin-top: 8px; }
+.tok-legend .sw { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+/* 工件行 */
+.artifact-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 4px;
+  border-bottom: 1px solid var(--line); font-size: 13px;
+}
+.artifact-row:last-child { border-bottom: none; }
+.artifact-row .fname { font-family: var(--mono); font-size: 12.5px; font-weight: 600; }
+.artifact-row .fmeta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* KV 表 */
+.kv { display: grid; grid-template-columns: 130px 1fr; row-gap: 8px; font-size: 13px; }
+.kv dt { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding-top: 2px; }
+.kv dd { color: var(--ink); word-break: break-all; }
+
+.hidden { display: none !important; }
+.mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+/* ============ 深色观测台 · 组件覆盖与新组件 ============ */
+body::before { background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.02) 3px 4px); }
+::selection { background: rgba(61,214,140,.25); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); }
+.btn { background: var(--sand); border-color: var(--line); color: var(--ink); }
+.btn:hover { background: #242B39; border-color: var(--line-strong); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #062316; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.btn.ghost { background: transparent; color: var(--ink-2); }
+.btn.ghost:hover { background: var(--sand); color: var(--ink); }
+.badge.pass { border-color: rgba(61,214,140,.3); }
+.badge.fail { border-color: rgba(241,89,107,.3); }
+.badge.error { border-color: rgba(245,192,68,.3); }
+.badge.queued { border-color: rgba(124,156,232,.3); }
+.badge.running { border-color: rgba(61,214,140,.3); }
+.badge.lock, .badge.abstain { border-color: var(--line-strong); }
+.chip { border-color: var(--line); color: var(--ink-2); }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+table.grid tbody tr:hover { background: rgba(255,255,255,.03); }
+.kpi { background: var(--panel); border-color: var(--line); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; }
+.kpi .num { font-size: 34px; letter-spacing: -.02em; }
+.kpi .spark { position: absolute; right: 14px; bottom: 14px; opacity: .9; }
+.panel { border-radius: 16px; }
+.raw-block { background: #0B0E13; color: #D5DEE8; border: 1px solid var(--line); }
+.log-console { background: #0B0E13; border: 1px solid var(--line); }
+.log-console .ln .no { color: #4A5563; }
+.csrf-note { background: rgba(245,192,68,.05); border-color: rgba(245,192,68,.25); color: var(--ink-2); }
+.conflict-diff { border-color: var(--line); }
+.conflict-diff .cell.old { background: rgba(241,89,107,.1); }
+.conflict-diff .cell.new { background: rgba(61,214,140,.1); }
+.compare-col.winner { border-color: rgba(61,214,140,.5); box-shadow: 0 0 0 1px rgba(61,214,140,.4); }
+.compare-col .col-head { background: var(--panel-warm); }
+.modal { border-color: var(--line-strong); box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.toast { background: #E8EDF3; color: #0A0C10; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.drawer { border-left-color: var(--line-strong); }
+.login-hero { border-right-color: var(--line); }
+.login-hero h1 em { color: var(--accent); }
+.brand-mark { border-color: var(--ink); color: var(--ink); }
+.field input, .field select { background: var(--panel-warm); border-color: var(--line-strong); color: var(--ink); }
+.field input:focus { border-color: var(--accent); }
+.divider { color: var(--muted); }
+.divider::before, .divider::after { background: var(--line); }
+.ticker { background: var(--panel); border-color: var(--line); }
+.tok-bar { border-color: var(--line-strong); background: var(--sand); }
+.artifact-row { border-bottom-color: var(--line); }
+.timeline::before { background: var(--line-strong); }
+.timeline .ev::before { background: var(--panel); border-color: var(--line-strong); }
+
+/* 侧边栏：分区导航 + 工作区切换 + 用户卡 */
+.sidebar { background: var(--paper); }
+.side-section { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); padding: 16px 12px 6px; }
+.ws-switch {
+  display: flex; align-items: center; gap: 8px; margin: 2px 4px 6px; padding: 8px 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  font-size: 12.5px; color: var(--ink); cursor: pointer; transition: border-color .15s ease;
+}
+.ws-switch:hover { border-color: var(--line-strong); }
+.ws-switch .ava { width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, var(--accent), var(--info)); flex: none; }
+.ws-switch .swap { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.nav-item .alert-count { margin-left: auto; font-family: var(--mono); font-size: 10px; background: var(--fail); color: #fff; border-radius: 999px; padding: 1px 7px; }
+.user-card {
+  display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 10px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+}
+.user-card .ava { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--info)); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #062316; flex: none; }
+.user-card .who { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+.user-card .sess { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+/* 顶栏：标题 + 搜索胶囊 + CTA */
+.topbar { border-bottom-color: var(--line); }
+.search-pill {
+  display: flex; align-items: center; gap: 8px; width: min(340px, 32vw);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px;
+  transition: border-color .15s ease;
+}
+.search-pill:focus-within { border-color: var(--accent); }
+.search-pill input { flex: 1; background: none; border: none; outline: none; color: var(--ink); font-size: 13px; font-family: inherit; }
+.search-pill input::placeholder { color: var(--muted); }
+.search-pill .mag { color: var(--muted); font-size: 13px; }
+.worker-pill { background: var(--panel); border-color: var(--line); }
+
+/* 指挥中心：三栏网格 + 右侧实时活动栏 */
+.ov-grid { display: grid; grid-template-columns: 1fr 308px; gap: 14px; align-items: start; }
+.rail { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 16px; }
+.rail .panel { margin-bottom: 0; }
+.feed { display: flex; flex-direction: column; }
+.feed-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 12px; align-items: flex-start; }
+.feed-item:last-child { border-bottom: none; }
+.feed-item .dotc { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex: none; }
+.feed-item .who { font-family: var(--mono); font-size: 12px; color: var(--ink); font-weight: 600; }
+.feed-item .meta { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+.feed-item .stat { margin-left: auto; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--ink-2); flex: none; }
+.feed-item .stat small { display: block; color: var(--muted); font-size: 10px; }
+.chip-inline { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; margin-left: 6px; }
+.chip-inline.warn { color: var(--warn); background: var(--warn-soft); }
+.chip-inline.err { color: var(--fail); background: var(--fail-soft); }
+
+/* 主图与图例 */
+.chart-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px 0; }
+.legend { display: flex; gap: 16px; margin-left: auto; font-size: 11.5px; color: var(--ink-2); }
+.legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.legend b { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.chart-wrap { padding: 8px 12px 12px; }
+.chart-wrap svg { width: 100%; height: auto; display: block; }
+
+/* Top Tools 横条 / 分布分段条 */
+.hbar-row { padding: 7px 0; font-size: 12.5px; }
+.hbar-row .lbl { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.hbar-row .lbl .mono { color: var(--ink-2); }
+.hbar { height: 4px; background: var(--sand); border-radius: 2px; overflow: hidden; }
+.hbar i { display: block; height: 100%; border-radius: 2px; }
+.segbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 10px 0 12px; }
+.segbar i { display: block; height: 100%; }
+.split-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
+.split-row .mono { margin-left: auto; color: var(--ink-2); }
+.split-row .pct { font-family: var(--mono); color: var(--muted); font-size: 11px; width: 44px; text-align: right; }
+
+/* ============ 字体排印精修（Inter / JetBrains Mono 体系） ============ */
+body { font-size: 13.5px; letter-spacing: 0; font-feature-settings: "cv05", "ss01"; }
+h1, h2, h3 { letter-spacing: -.02em; font-weight: 600; }
+.mono, .id-cell, .num, .pct, code, .raw-block, .log-console, td.mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "zero";
+}
+.micro-label { font-weight: 500; letter-spacing: .14em; }
+.kpi .num { font-weight: 600; letter-spacing: -.035em; font-feature-settings: "tnum"; }
+.kpi .micro-label { letter-spacing: .12em; }
+.kpi .trend { font-weight: 500; letter-spacing: -.005em; }
+.topbar h2 { font-size: 21px; font-weight: 600; letter-spacing: -.025em; }
+.panel-head h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+.nav-item { font-size: 13px; font-weight: 500; letter-spacing: -.005em; padding: 7px 12px; }
+.nav-item.active { font-weight: 600; }
+.side-section { font-weight: 600; letter-spacing: .22em; }
+.btn { font-weight: 500; letter-spacing: -.005em; }
+.btn.primary { font-weight: 600; }
+.badge { font-weight: 500; letter-spacing: .02em; }
+table.grid th { font-weight: 500; letter-spacing: .12em; }
+table.grid td { font-size: 13px; }
+.feed-item .who { font-weight: 500; }
+.legend { font-weight: 500; }
+.tab { font-weight: 500; letter-spacing: -.005em; }
+.tab.active { font-weight: 600; }
+.delta-chip { letter-spacing: .01em; }
+.compare-col .big-rate { font-weight: 600; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.vs-mark { font-weight: 500; }
+.login-hero h1 { letter-spacing: -.015em; }
+.hero-quote { font-size: 19px; line-height: 1.6; }
+.field label { font-weight: 500; letter-spacing: .01em; }
+.stat-tile .v { font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.toast { font-weight: 500; letter-spacing: -.005em; }
+input, select, button { letter-spacing: inherit; }
+.kv dt { font-weight: 500; letter-spacing: .1em; }
+
+@media (max-width: 980px) {
+  .login-wrap { grid-template-columns: 1fr; }
+  .login-hero { border-right: none; border-bottom: 1px solid var(--line); }
+  .shell { grid-template-columns: 64px 1fr; }
+  .nav-item span.label, .sidebar .brand b, .sidebar .brand span, .session-box, .sidebar-foot .btn span { display: none; }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .compare-grid { grid-template-columns: 1fr; gap: 14px; }
+  .vs-mark { margin: 0 auto; }
+  .ov-grid { grid-template-columns: 1fr; }
+  .rail { position: static; }
+  .search-pill { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="modal" id="modal"></div>
+<div class="toasts" id="toasts"></div>
+<script>
+/* =====================================================
+   LiteEval 控制台原型 —— Mock 数据与状态
+   对应后端 0.2.0 + 进行中改进（schema v3 / Owner 会话 /
+   进度接口 / 归档 / 评分预览）
+===================================================== */
+const state = {
+  route: "login",
+  authed: false,
+  owner: null,
+  sessionTotal: 8 * 3600,     // 空闲 8 小时失效（最长 7 天），与 liteeval/sessions.py 一致
+  sessionLeft: 8 * 3600,
+  expFilter: "all",
+  expPage: 1,
+  detailId: null,
+  detailPage: 1,
+  compareCasePage: 1,
+  datasetTab: "packages",
+  traceSelected: new Set(),
+  previewRunning: false,
+  runId: null,                // Run/Rollout 详情
+  runTab: "overview",
+  logLines: [],               // 运行中日志缓冲（游标轮询模拟）
+  ghPulling: false,           // GitHub 拉取进行中
+};
+
+/* ---------- Mock：数据集快照（schema v3，不可变） ---------- */
+const datasets = [
+  { id: "ds_9f2a", name: "客服对话·回归集", rev: 3, cases: 48, created: "2026-10-28 14:02", locked: true, archived: false, note: "schema v3 迁移后保留全部修订" },
+  { id: "ds_71bc", name: "客服对话·回归集", rev: 2, cases: 44, created: "2026-10-12 09:31", locked: true, archived: false, note: "" },
+  { id: "ds_3e08", name: "代码修复·冒烟集", rev: 1, cases: 12, created: "2026-09-30 17:45", locked: true, archived: true, note: "已被 ds_9f2a 取代" },
+  { id: "ds_55d1", name: "多轮工具调用集", rev: 1, cases: 26, created: "2026-10-05 11:20", locked: true, archived: false, note: "" },
+];
+
+/* ---------- Mock：评分器 ---------- */
+const evaluators = [
+  { id: "ev_rule_exact", name: "rule/exact-match", kind: "规则", rev: 2, desc: "最终答案与期望完全一致", archived: false },
+  { id: "ev_judge_q", name: "llm-judge/quality", kind: "LLM Judge", rev: 4, desc: "质量五维打分，阈值 0.7", archived: false },
+  { id: "ev_tool_args", name: "rule/tool-args", kind: "规则", rev: 1, desc: "工具参数逐项比对", archived: false },
+  { id: "ev_judge_old", name: "llm-judge/v1", kind: "LLM Judge", rev: 1, desc: "旧版提示词，已被 rev4 取代", archived: true },
+];
+
+/* ---------- Mock：评分预览记录（Worker 执行，不覆盖正式评分） ---------- */
+const previews = [
+  { id: "pv_1042", evaluator: "llm-judge/quality rev4", case: "case_0031", status: "done", score: "0.83 / pass", ranAt: "2026-11-01 11:42", worker: "worker-02" },
+  { id: "pv_1041", evaluator: "rule/tool-args rev1", case: "case_0007", status: "done", score: "fail · 参数 city 不符", ranAt: "2026-11-01 11:15", worker: "worker-01" },
+];
+
+/* ---------- Mock：LLM / Endpoint 连接（不绑定用途；是否作 Judge 由 Case/Grader 决定） ---------- */
+const connections = [
+  { id: "mc_a102", name: "客服 Agent 生产端点", kind: "http_agent", endpoint: "https://agent.internal.example.com/chat/", model: "—", keyRef: "AGENT_PROD_KEY", keyVer: 2, archived: false, health: "ok", latency: "212ms" },
+  { id: "mc_b330", name: "GPT 系旗舰模型", kind: "openai_compatible", endpoint: "https://api.model-vendor.example.com/v1", model: "vendor-large-2026", keyRef: "LLM_API_KEY", keyVer: 1, archived: false, health: "ok", latency: "486ms" },
+  { id: "mc_b331", name: "轻量备用模型", kind: "openai_compatible", endpoint: "https://api.model-vendor.example.com/v1", model: "vendor-mini-2026", keyRef: "LLM_API_KEY", keyVer: 1, archived: false, health: "degraded", latency: "1.9s" },
+  { id: "mc_c071", name: "本地开源模型（Ollama）", kind: "openai_compatible", endpoint: "http://127.0.0.1:11434/v1", model: "qwen3-local", keyRef: null, keyVer: 0, archived: false, health: "unknown", latency: "—" },
+  { id: "mc_x900", name: "旧联调端点", kind: "http_agent", endpoint: "http://127.0.0.1:9100/", model: "—", keyRef: null, keyVer: 1, archived: true, health: "unknown", latency: "—" },
+];
+
+/* ---------- Mock：用户自定义 Keys（独立管理，连接/工具按名引用） ---------- */
+const userKeys = [
+  { id: "key_01", name: "LLM_API_KEY", masked: "sk-••••••••7f2a", usedBy: ["mc_b330", "mc_b331"], created: "2026-10-20", rotatedAt: null },
+  { id: "key_02", name: "AGENT_PROD_KEY", masked: "ak-••••••••c901", usedBy: ["mc_a102"], created: "2026-10-22", rotatedAt: "2026-11-01" },
+  { id: "key_03", name: "MCP_SEARCH_KEY", masked: "mk-••••••••55d0", usedBy: ["tool_mcp_search"], created: "2026-10-25", rotatedAt: null },
+  { id: "key_04", name: "GITHUB_TOKEN", masked: "ghp_••••••••b312", usedBy: [], created: "2026-10-28", rotatedAt: null },
+];
+
+/* ---------- Mock：Tools（内置能力 + 远端 MCP 工具） ---------- */
+const tools = [
+  { id: "tool_ws", name: "workspace.read / workspace.write", kind: "builtin", endpoint: "—", keyRef: null, caps: ["文件读写"], status: "builtin" },
+  { id: "tool_proc", name: "process.execute", kind: "builtin", endpoint: "—", keyRef: null, caps: ["受限进程执行"], status: "builtin" },
+  { id: "tool_mcp_search", name: "web-search", kind: "mcp_remote", endpoint: "https://mcp.vendor.example.com/search", keyRef: "MCP_SEARCH_KEY", caps: ["search.query", "search.fetch"], status: "ok" },
+  { id: "tool_mcp_browser", name: "browser-browse", kind: "mcp_remote", endpoint: "https://mcp.vendor.example.com/browse", keyRef: null, caps: ["page.read"], status: "unknown" },
+];
+
+/* ---------- Mock：数据集命名版本（POST /v1/datasets/{id}/versions 发布，冻结不可改） ---------- */
+const datasetVersions = [
+  { id: "dv_301", dataset: "ds_9f2a", name: "support-regression-2026-11", desc: "退款和订单关键用例", cases: 48, hash: "sha256:9f2a…c41d", created: "2026-10-28 14:05", source: "本地 Case" },
+  { id: "dv_288", dataset: "ds_9f2a", name: "support-regression-2026-10", desc: "十月基线", cases: 44, hash: "sha256:71bc…08ee", created: "2026-10-12 09:40", source: "本地 Case" },
+  { id: "dv_266", dataset: "ds_55d1", name: "swe-lite-zh@v0.4", desc: "从 GitHub 拉取的多轮工具调用基准", cases: 26, hash: "sha256:55d1…77a0", created: "2026-10-05 11:22", source: "GitHub · github.com/example/swe-lite-zh @ v0.4" },
+];
+
+/* ---------- Mock：GitHub Bench 拉取记录 ---------- */
+const ghSources = [
+  { repo: "github.com/example/swe-lite-zh", ref: "v0.4", path: "cases/", pulledAt: "2026-10-05 11:22", cases: 26, dataset: "多轮工具调用集" },
+  { repo: "github.com/example/agent-bench-cn", ref: "main@a1b2c3d", path: "benchmarks/refund/", pulledAt: "2026-09-30 16:10", cases: 12, dataset: "代码修复·冒烟集" },
+];
+
+/* ---------- Mock：Run 详情（rollout） ---------- */
+function mockRun(caseId) {
+  const c = caseResults.find(x => x.id === caseId) || caseResults[0];
+  const running = c.status === "queued";
+  return {
+    id: "run_9c17e2",
+    caseId: c.id, input: c.input, status: running ? "running" : c.status,
+    judge: c.judge, score: c.score, latency: c.latency,
+    attempt: 2, maxRetries: 1, worker: "worker-02",
+    sandbox: "proc:isolated · workdir artifacts/run_9c17e2/",
+    trajectory: [
+      { t: "+0.0s", kind: "request", title: "HTTP 请求已映射", detail: "POST /chat · Idempotency-Key 8f3a…c2" },
+      { t: "+0.8s", kind: "tool", title: "工具调用 query_order", title2: "参数 {order_id: 1024} · 耗时 412ms", tokens: { in: 812, out: 96 } },
+      { t: "+1.6s", kind: "tool", title: "工具调用 get_logistics", title2: "参数 {order_id: 1024} · 耗时 388ms", tokens: { in: 1204, out: 143 } },
+      { t: "+2.4s", kind: "reason", title: "模型推理（reasoning 计量）", detail: "reasoning_tokens 仅计量，不保存 CoT 正文", tokens: { reasoning: 1024 } },
+      { t: "+3.1s", kind: "response", title: "最终输出", detail: "订单 1024 已于 10-30 签收。", tokens: { in: 1480, out: 210 } },
+      { t: "+3.4s", kind: "judge", title: "Judge 评分", detail: c.judge + " → " + c.score },
+    ],
+    artifacts: [
+      { name: "stdout.log", size: "18.2 KB", sha: "a91f…03c2", kind: "日志" },
+      { name: "response.json", size: "2.1 KB", sha: "77be…9d10", kind: "原始响应" },
+      { name: "workdir/report.md", size: "4.6 KB", sha: "c208…55aa", kind: "产出文件" },
+      { name: "trace.events.jsonl", size: "9.8 KB", sha: "e3f0…1b77", kind: "事件 v2" },
+    ],
+    usage: {
+      target: { in: 3496, out: 449, cachedIn: 1180, cacheWrite: 220, reasoning: 1024, calls: 3, retries: 1 },
+      judge: { in: 1560, out: 64, cachedIn: 0, cacheWrite: 0, reasoning: 0, calls: 1, retries: 0 },
+      cost: [{ ccy: "USD", amount: 0.0042, samples: 4 }],
+      latency: { mean: "3.4s", p50: "3.1s", p95: "4.8s" },
+      outputChars: 486, outputBytes: 712, logBytes: 18640, artifactBytes: 35389,
+      toolCalls: 2, toolDist: { query_order: 1, get_logistics: 1 },
+      warnings: ["1 个重试回合的 usage 字段不完整（known_samples=3/4）", "运行中统计为 partial，以完成后为准"],
+    },
+  };
+}
+const LOG_POOL = [
+  ["", "[worker-02] 租约心跳 lease=run_9c17e2 ok"],
+  ["tool", "[target] POST /chat → 200 · 812 in / 96 out tokens"],
+  ["", "[sandbox] workdir artifacts/run_9c17e2/ 已隔离"],
+  ["tool", "[target] tool_call query_order(order_id=1024) · 412ms"],
+  ["", "[target] cached_input_tokens=1180（供应商字段，非平台缓存）"],
+  ["tool", "[target] tool_call get_logistics(order_id=1024) · 388ms"],
+  ["warn", "[usage] attempt 1 的 reasoning_tokens 缺失，按 known_samples 处理"],
+  ["", "[target] 最终输出 486 字符 / 712 字节"],
+  ["", "[judge] llm-judge/quality rev4 调用中…"],
+  ["err", "[judge] attempt 1 超时，按 judge_retries=1 重试"],
+  ["", "[judge] attempt 2 → score 写入正式 Score"],
+  ["", "[worker-02] run_9c17e2 收尾，工件 SHA-256 核对通过"],
+];
+
+/* ---------- Mock：Benchmark 目录包（0.3.1 已实现 publish/run/rejudge/export） ---------- */
+const benchmarkPackages = [
+  { id: "bp_native_fin", bid: "native-finance", name: "Native Finance Tasks", version: "0.1.0", source: "本地目录 benchmarks/native_finance/", tasks: 2, release: "rel_7f2c", lockDigest: "sha256:7f2c…e91a", published: "2026-11-02 00:12", status: "published", real: true,
+    desc: "收入增长/下滑计算：CSV 输入 + 二进制资源，command Judge 按 ground_truth.json 判定" },
+  { id: "bp_fab_v2", bid: "finance-agent-v2", name: "Finance Agent v2（FAB 固定集）", version: "2.0.0-pinned", source: "Git · 已固定 commit", tasks: 27, release: "rel_3a08", lockDigest: "sha256:3a08…44cf", published: "2026-10-30 22:41", status: "published", real: true,
+    desc: "公开财务基准固定版，public.csv + source.json 记录来源与许可" },
+];
+const benchmarkTasks = [
+  { tid: "growth-001", title: "收入增长计算与报告", category: "financial_calculation", env: "python-offline (docker)", budget: "2400s", artifacts: ["outputs/report.md", "outputs/result.json"], checks: [{ id: "numeric-result", type: "command", weight: 0.8, must: true }, { id: "report-quality", type: "llm", weight: 0.2, must: false }], threshold: 0.9 },
+  { tid: "decline-002", title: "收入下滑归因分析", category: "financial_calculation", env: "python-offline (docker)", budget: "2400s", artifacts: ["outputs/report.md", "outputs/result.json"], checks: [{ id: "numeric-result", type: "command", weight: 1.0, must: true }], threshold: 0.9 },
+];
+/* ---------- Mock：Harness 注册表（注册/修订已实现；公共来源接入为提案） ---------- */
+const harnessRevisions = [
+  { id: "hr_91ab", hid: "finance.command", role: "evaluation", version: "0.1.0", src: "自建目录 harnesses/finance_command", digest: "sha256:91ab…02dd", caps: ["submission.files", "judge.command"], status: "已注册 · 验收通过", proposal: false },
+  { id: "hr_10c4", hid: "liteeval.legacy-simple", role: "evaluation", src: "平台 builtin", version: "0.3.1", digest: "sha256:10c4…88be", caps: ["snapshot", "judge.rule", "judge.llm"], status: "已注册（builtin）", proposal: false },
+  { id: "hr_77e0", hid: "personal.finance-loop", role: "agent", src: "自建目录", version: "0.1.0", digest: "sha256:77e0…c531", caps: ["agent.rollout", "events.stream", "cancel"], status: "提案示例 · 协议未定稿", proposal: true },
+  { id: "hr_55b2", hid: "swe-style.public-runner", role: "evaluation", src: "公共 Git（需 IntegrationAdapter）", version: "—", digest: "待固定 commit", caps: ["待能力校验"], status: "提案 · 来源公开 ≠ 已兼容", proposal: true },
+];
+/* ---------- Mock：导入作业流水线（Git 来源 API 为提案，本地目录已实现） ---------- */
+const importJobs = [
+  { id: "ij_2041", src: "本地目录 ./benchmarks/native_finance", stage: "published", diff: "+2 任务 · 0 修改 · 0 移除", when: "2026-11-02 00:12", proposal: false },
+  { id: "ij_2039", src: "Git github.com/example/swe-lite-zh @ v0.4", stage: "validated", diff: "+26 任务 · 3 修改 · 1 移除", when: "排队准备依赖中", proposal: true },
+];
+/* ---------- Mock：Run 阶段与评分明细 ---------- */
+const runPhases = [
+  { name: "setup", label: "环境准备", dur: "1.8s", st: "done" },
+  { name: "target", label: "Target 执行", dur: "212.4s", st: "done" },
+  { name: "collect", label: "产物采集", dur: "0.6s", st: "done" },
+  { name: "judge", label: "独立评分", dur: "3.1s", st: "done" },
+  { name: "teardown", label: "清理", dur: "0.4s", st: "done" },
+];
+const judgeChecks = [
+  { id: "numeric-result", type: "command", weight: 0.8, must: true, outcome: "pass", score: 1.0, reason: "result.json 中的增长率符合 ground_truth.json", evidence: "outputs/result.json · /growth_rate" },
+  { id: "report-quality", type: "llm", weight: 0.2, must: false, outcome: "pass", score: 0.75, reason: "计算方法说明正确，引用数据完整", evidence: "outputs/report.md" },
+];
+
+/* ---------- Mock：实验 ---------- */
+const experiments = [
+  { id: "exp_8c21", name: "support-agent v2.4 回归", dataset: "ds_9f2a", dsRev: 3, agent: "support-agent:v2.4", status: "running", done: 31, total: 48, successRate: null, execRate: null, started: "13:41:07", baseline: "exp_7a10" },
+  { id: "exp_7a10", name: "support-agent v2.3 基线", dataset: "ds_9f2a", dsRev: 3, agent: "support-agent:v2.3", status: "completed", done: 48, total: 48, successRate: 0.50, execRate: 1.0, started: "10:02:44", baseline: null },
+  { id: "exp_6f99", name: "judge rev4 校准", dataset: "ds_55d1", dsRev: 1, agent: "support-agent:v2.3", status: "completed", done: 26, total: 26, successRate: 0.62, execRate: 0.96, started: "昨天 18:20", baseline: null },
+  { id: "exp_6e02", name: "support-agent v2.2 回归", dataset: "ds_71bc", dsRev: 2, agent: "support-agent:v2.2", status: "completed", done: 44, total: 44, successRate: 0.41, execRate: 1.0, started: "昨天 09:12", baseline: null },
+  { id: "exp_5d31", name: "codex-adapter 联调", dataset: "ds_3e08", dsRev: 1, agent: "codex:0.44.0", status: "failed", done: 5, total: 12, successRate: null, execRate: 0.42, started: "10-30 16:55", baseline: null, failReason: "替身 CLI 跨平台启动失败（已定位，修复中）" },
+  { id: "exp_5c18", name: "support-agent v2.1 归档前验证", dataset: "ds_71bc", dsRev: 2, agent: "support-agent:v2.1", status: "cancelled", done: 18, total: 44, successRate: null, execRate: null, started: "10-29 14:30", baseline: null },
+];
+
+/* ---------- Mock：实验 exp_8c21 的 Case 结果（分页展示） ---------- */
+const CASE_STATUS = ["pass", "pass", "pass", "fail", "pass", "abstain", "pass", "error", "pass", "fail"];
+const caseResults = Array.from({ length: 48 }, (_, i) => {
+  const n = String(i + 1).padStart(4, "0");
+  const st = i < 31 ? CASE_STATUS[i % CASE_STATUS.length] : "queued";
+  return {
+    id: "case_" + n,
+    input: ["查询订单 1024 的物流状态", "用户要求退款并升级投诉", "把会议纪要翻译成英文", "调用工具查询北京天气", "多轮对话：先查积分再兑换", "总结这封邮件并起草回复"][i % 6] + " #" + n,
+    status: st,
+    score: st === "pass" ? (0.72 + (i % 5) * 0.05).toFixed(2) : st === "fail" ? (0.2 + (i % 3) * 0.1).toFixed(2) : "—",
+    latency: st === "queued" ? "—" : (1.2 + (i % 7) * 0.4).toFixed(1) + "s",
+    judge: i % 3 === 0 ? "llm-judge/quality" : "rule/exact-match",
+  };
+});
+
+/* ---------- Mock：比较 exp_7a10(v2.3) vs exp_8c21(v2.4) ---------- */
+const compareRows = Array.from({ length: 48 }, (_, i) => {
+  const n = String(i + 1).padStart(4, "0");
+  const r = i % 9;
+  const delta = r < 4 ? "improved" : r < 8 ? "unchanged" : "regressed";
+  return { id: "case_" + n, delta, left: delta === "regressed" ? "pass" : delta === "improved" ? "fail" : (i % 2 ? "pass" : "fail"), right: delta === "improved" ? "pass" : delta === "regressed" ? "fail" : (i % 2 ? "pass" : "fail") };
+});
+
+/* ---------- Mock：生产 Trace ---------- */
+const traces = [
+  { id: "tr_88f1", agent: "support-agent:v2.4", when: "13:32:10", summary: "用户投诉未收到货，Agent 错误承诺 24h 送达", flagged: true },
+  { id: "tr_88e9", agent: "support-agent:v2.4", when: "13:21:54", summary: "正常查询运费，工具调用 2 次", flagged: false },
+  { id: "tr_88d7", agent: "support-agent:v2.4", when: "13:09:02", summary: "多轮对话中途丢失上下文", flagged: true },
+  { id: "tr_88c4", agent: "support-agent:v2.3", when: "12:58:41", summary: "退款流程完成，耗时 4.2s", flagged: false },
+  { id: "tr_88b2", agent: "support-agent:v2.4", when: "12:47:19", summary: "Judge 弃判：缺少期望答案", flagged: true },
+];
+
+/* ---------- Mock：活动流 ---------- */
+const activities = [
+  "13:41:07 实验 exp_8c21 启动 · 48 个 Case · 并发 4",
+  "13:40:55 评分预览 pv_1042 完成 · llm-judge rev4",
+  "13:38:20 数据集 ds_9f2a 创建修订 rev3（+4 Case）",
+  "13:31:02 Trace tr_88f1 转为 Case（待人工补期望答案）",
+  "13:24:47 Worker worker-02 心跳恢复 · 接管 2 个中断 Run",
+  "13:15:33 Owner 登录成功 · 会话空闲 8 小时失效",
+];
+
+/* ---------- 工具 ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const STATUS_CN = { pass: "通过", fail: "失败", abstain: "弃判", error: "错误", running: "运行中", queued: "排队中", completed: "已完成", failed: "失败", cancelled: "已取消", done: "完成" };
+function badge(st) {
+  const cls = { pass: "pass", fail: "fail", abstain: "abstain", error: "error", running: "running", queued: "queued", completed: "pass", failed: "fail", cancelled: "abstain", done: "pass" }[st] || "queued";
+  const led = st === "running" ? '<span class="led busy"></span>' : "";
+  return `<span class="badge ${cls}">${led}${STATUS_CN[st] || st}</span>`;
+}
+function toast(msg, ok = true) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<span class="led ${ok ? "on" : "off"}" style="${ok ? "" : "background:var(--fail)"}"></span>${esc(msg)}`;
+  $("#toasts").appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .3s"; setTimeout(() => el.remove(), 320); }, 3600);
+}
+function fmtPct(v) { return v == null ? "—" : (v * 100).toFixed(0) + "%"; }
+
+/* ---------- 路由 ---------- */
+function go(route) {
+  if (!state.authed && route !== "login") { route = "login"; }
+  state.route = route;
+  location.hash = "#/" + route;
+  render();
+}
+window.addEventListener("hashchange", () => {
+  const r = location.hash.replace(/^#\//, "") || (state.authed ? "overview" : "login");
+  if (r !== state.route) { state.route = state.authed ? r : "login"; render(); }
+});
+</script>
+<script>
+/* ================= 视图：登录 ================= */
+function viewLogin() {
+  return `
+  <div class="login-wrap">
+    <div class="login-hero">
+      <div class="brand"><span class="brand-mark">LE</span><b>LiteEval 控制台</b></div>
+      <div>
+        <h1>让每一次 Agent 变更，<br/>都<em>有据可查</em>。</h1>
+        <p class="sub">生产 Trace 沉淀为 Case，不可变数据集快照驱动实验，质量与执行指标分层呈现——本地优先，数据不出你的机器。</p>
+      </div>
+      <p class="hero-quote">“completed 只代表处理完毕；质量通过率与执行成功率，是两件事。”—— LiteEval 架构说明</p>
+    </div>
+    <div class="login-panel">
+      <div class="login-card">
+        <span class="micro-label">OWNER SIGN-IN · v0.3 PREVIEW</span>
+        <h2 style="font-size:24px;margin:10px 0 24px">登录控制台</h2>
+        <form id="loginForm" onsubmit="event.preventDefault();doLogin(false)">
+          <div class="field">
+            <label>Owner 账号</label>
+            <input id="loginName" value="wayne" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label>密码</label>
+            <input id="loginPass" type="password" value="demo-password" autocomplete="current-password" />
+          </div>
+          <div class="csrf-note">
+            <span class="led on" style="margin-top:4px"></span>
+            <span>本次登录将签发 <span class="mono">csrf_token</span> 并写入 HttpOnly 会话 Cookie；所有写操作请求需携带 <span class="mono">X-CSRF-Token</span> 头。原型为演示环境，任意密码可登录。</span>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center" type="submit">登录 · 空闲 8 小时失效</button>
+        </form>
+        <div class="divider">或使用项目 API Key（原方式继续支持）</div>
+        <div class="field">
+          <label>项目密钥（签发时仅显示一次）</label>
+          <input id="loginKey" placeholder="ltsk_••••••••••••••••" />
+        </div>
+        <button class="btn ghost" style="width:100%;justify-content:center" onclick="doLogin(true)">以 API Key 进入</button>
+        <p style="margin-top:22px;font-size:12px;color:var(--muted)">首次部署？运行 <span class="mono">python -m liteeval.cli owner init</span> 完成 Owner 初始化后再登录。</p>
+      </div>
+    </div>
+  </div>`;
+}
+function doLogin(byKey) {
+  state.authed = true;
+  state.owner = byKey ? "API Key · Support 项目" : ($("#loginName").value || "owner");
+  state.sessionLeft = state.sessionTotal;
+  toast(byKey ? "已通过项目密钥进入" : "登录成功，会话空闲 8 小时失效");
+  go("overview");
+}
+function doLogout() {
+  state.authed = false; state.owner = null;
+  toast("已退出，会话已失效");
+  go("login");
+}
+
+/* ================= 应用骨架 ================= */
+const NAV_SECTIONS = [
+  ["Monitor 监控", [["overview", "指挥中心", ""], ["traces", "Trace 导入", "alert"]]],
+  ["Analyze 分析", [["experiments", "实验", "exp"], ["compare", "版本比较", ""], ["datasets", "Benchmarks", ""]]],
+  ["Config 配置", [["connections", "LLM / Endpoint", ""], ["harnesses", "Harnesses", ""], ["tools", "Tools", ""], ["evaluators", "Grader", ""], ["keys", "Keys", ""]]],
+];
+function shell(content, title, actions = "") {
+  const nav = NAV_SECTIONS.map(([sec, items]) => `
+    <div class="side-section">${sec}</div>
+    ${items.map(([r, label, cnt]) => `
+      <button class="nav-item ${state.route === r ? "active" : ""}" onclick="go('${r}')">
+        <span class="dot"></span><span class="label">${label}</span>
+        ${cnt === "exp" ? `<span class="count">${experiments.length}</span>` : ""}
+        ${cnt === "alert" ? `<span class="alert-count">${traces.filter(t=>t.flagged).length}</span>` : ""}
+      </button>`).join("")}`).join("");
+  return `
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">LE</span><div><b>LiteEval</b><span>v0.3.0 · schema 5</span></div></div>
+      <button class="ws-switch" onclick="toast('原型演示：单 Owner 模式，项目切换将在多项目版本开放')">
+        <span class="ava"></span><span>Owner / prod</span><span class="swap">⇅</span>
+      </button>
+      ${nav}
+      <div class="sidebar-foot">
+        <div class="user-card">
+          <span class="ava">${esc((state.owner || "O").slice(0,1).toUpperCase())}</span>
+          <div style="flex:1;min-width:0">
+            <div class="who">${esc(state.owner || "")}</div>
+            <div class="sess">会话剩余 <span id="sessClock">--:--</span></div>
+          </div>
+        </div>
+        <div class="session-box" style="padding:0 2px 10px">
+          <div class="bar"><i id="sessBar" style="width:100%"></i></div>
+        </div>
+        <button class="btn ghost sm" style="width:100%;justify-content:center" onclick="doLogout()">退出登录</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <h2>${title}</h2>
+        <div class="spacer"></div>
+        <div class="search-pill"><span class="mag">⌕</span><input placeholder="搜索实验、Run、Case…" onkeydown="if(event.key==='Enter')toast('全局搜索为原型占位，待接入 Trace 高级查询接口')"/></div>
+        <span class="worker-pill"><span class="led on"></span>worker-01</span>
+        <span class="worker-pill"><span class="led busy"></span>worker-02</span>
+        ${actions}
+      </div>
+      ${content}
+    </main>
+  </div>`;
+}
+
+/* ================= 视图：指挥中心（观测台布局） ================= */
+/* 迷你趋势线：1.5px 细线 + 同色系渐变面积填充 */
+let _sparkSeq = 0;
+function sparkSVG(values, color, w = 110, h = 34) {
+  const min = Math.min(...values), max = Math.max(...values), span = (max - min) || 1;
+  const pts = values.map((v, i) => `${(i / (values.length - 1) * w).toFixed(1)},${(h - 3 - (v - min) / span * (h - 8)).toFixed(1)}`);
+  const gid = "sp" + (++_sparkSeq);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="M0,${h} L${pts.join(" L")} L${w},${h} Z" fill="url(#${gid})"/>
+    <polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="1.5"/>
+  </svg>`;
+}
+function series(seed, base, amp, n = 48) {
+  const pts = []; let v = base;
+  for (let i = 0; i < n; i++) { v += Math.sin(i / 3.1 + seed) * 1.6 + Math.cos(i / 1.7 + seed * 2) * 0.9; v = Math.max(3, Math.min(78, v)); pts.push(v); }
+  return pts;
+}
+/* 主图：多线时间序列 + 虚线网格 + tiny mono 轴 */
+function chartSVG() {
+  const W = 760, H = 240, PL = 34, PB = 22, PT = 8;
+  const rows = [
+    { label: "pass", color: "var(--pass)", data: series(0.5, 34, 70), count: "12,272" },
+    { label: "fail", color: "var(--warn)", data: series(2.1, 22, 40), count: "128" },
+    { label: "error", color: "var(--fail)", data: series(4.7, 12, 24), count: "38" },
+  ];
+  const y = (v) => PT + (1 - v / 80) * (H - PT - PB);
+  const x = (i, n) => PL + (i / (n - 1)) * (W - PL - 8);
+  const grid = [0, 20, 40, 60, 80].map(g => `
+    <line x1="${PL}" y1="${y(g)}" x2="${W - 8}" y2="${y(g)}" stroke="rgba(255,255,255,.07)" stroke-dasharray="${g ? "3 5" : "0"}"/>
+    <text x="${PL - 6}" y="${y(g) + 3}" text-anchor="end" fill="var(--muted)" font-size="9" font-family="var(--mono)">${g}</text>`).join("");
+  const hours = ["00:00","04:00","08:00","12:00","16:00","20:00","24:00"].map((t, i) => `
+    <text x="${PL + i * (W - PL - 8) / 6}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="var(--mono)">${t}</text>`).join("");
+  const lines = rows.map(r => `<polyline points="${r.data.map((v, i) => `${x(i, r.data.length).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${r.color}" stroke-width="1.5"/>`).join("");
+  return { svg: `<svg viewBox="0 0 ${W} ${H}">${grid}${hours}${lines}</svg>`, legend: rows };
+}
+function viewOverview() {
+  const run = experiments.find((e) => e.status === "running");
+  const chart = chartSVG();
+  const kpis = `
+  <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><span class="micro-label">Runs · 累计执行</span><div class="num">1,286</div><div class="trend up">▲ 8.4% vs 昨日</div><div class="spark">${sparkSVG(series(1.2, 30, 60, 24), "#3DD68C")}</div></div>
+    <div class="kpi"><span class="micro-label">最新通过率 · v2.4</span><div class="num" id="kpiRate">${run ? fmtPct(run.done / run.total * 0.78) : "78%"}</div><div class="trend up">▲ 28 pts vs 基线 v2.3</div><div class="spark">${sparkSVG(series(2.9, 24, 60, 24), "#3DD68C")}</div></div>
+    <div class="kpi"><span class="micro-label">Tokens Burned · 今日</span><div class="num">8.4<small> M</small></div><div class="trend down">▲ 12.1% · $0.19 / hr</div><div class="spark">${sparkSVG(series(3.6, 40, 70, 24), "#F1596B")}</div></div>
+  </div>`;
+  const chartPanel = `
+  <div class="panel">
+    <div class="chart-head"><h3 style="font-size:14px">Case 执行 · 30 分钟粒度</h3>
+      <div class="legend">${chart.legend.map(r=>`<span><span class="sw" style="background:${r.color}"></span>${r.label} <b>${r.count}</b></span>`).join("")}</div>
+    </div>
+    <div class="chart-wrap">${chart.svg}</div>
+  </div>`;
+  const runPanel = run ? `
+  <div class="panel">
+    <div class="panel-head">
+      <span class="led busy"></span><h3>正在运行：${esc(run.name)}</h3>
+      <span class="badge running"><span class="led busy"></span>轮询 /progress · 每 2s</span>
+      <div class="spacer"></div>
+      <button class="btn sm" onclick="openDetail('${run.id}')">查看详情</button>
+      <button class="btn sm danger" onclick="cancelExp('${run.id}')">取消</button>
+    </div>
+    <div class="panel-body">
+      <div style="display:flex;align-items:center;gap:18px">
+        <div class="prog" style="flex:1;height:8px"><i id="runProg" style="width:${(run.done/run.total*100).toFixed(0)}%"></i></div>
+        <span class="mono" id="runProgTxt" style="font-size:13px">${run.done}/${run.total}</span>
+      </div>
+      <p style="margin-top:10px;font-size:12.5px;color:var(--ink-2)">数据集 <span class="mono">${run.dataset} rev${run.dsRev}</span> · Agent <span class="mono">${run.agent}</span> · 基线 <span class="mono">${run.baseline}</span></p>
+    </div>
+  </div>` : "";
+  const bottom = `
+  <div class="two-col" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="panel"><div class="panel-head"><h3>Top 工具调用</h3><div class="spacer"></div><span class="micro-label">30D</span></div>
+      <div class="panel-body" style="padding-top:8px">
+        ${[["query_order","24,820","0.4% err","var(--pass)",100],["get_logistics","18,402","1.1% err","var(--warn)",74],["search_kb","12,180","0.2% err","var(--pass)",49],["refund_request","8,866","2.3% err","var(--fail)",36]].map(([t,c,e,cl,w])=>`
+          <div class="hbar-row"><div class="lbl"><span class="mono" style="color:var(--ink)">${t}</span><span class="mono">${c} · <span style="color:${cl}">${e}</span></span></div>
+          <div class="hbar"><i style="width:${w}%;background:${cl}"></i></div></div>`).join("")}
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>评分器用量分布</h3><div class="spacer"></div><span class="micro-label">8.4M TOK</span></div>
+      <div class="panel-body" style="padding-top:12px">
+        <div class="segbar">${[["#3DD68C",52.4],["#7C9CE8",26.7],["#F5C044",11.5],["#F1596B",9.4]].map(([c,w])=>`<i style="width:${w}%;background:${c}"></i>`).join("")}</div>
+        ${[["#3DD68C","llm-judge/quality rev4","4.4M","52.4%"],["#7C9CE8","rule/exact-match rev2","2.2M","26.7%"],["#F5C044","rule/tool-args rev1","966K","11.5%"],["#F1596B","llm-judge/v1（已归档）","788K","9.4%"]].map(([c,n,t,p])=>`
+          <div class="split-row"><span class="sw" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span><span class="mono" style="font-size:12px">${n}</span><span class="mono">${t}</span><span class="pct">${p}</span></div>`).join("")}
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>最近变更</h3><div class="spacer"></div><span class="micro-label">DEPLOYS & CONFIG</span></div>
+      <div class="panel-body" style="padding-top:8px">
+        ${[["exp_8c21","v2.3 → v2.4 回归启动","14:02","var(--info)"],["mc_b330","Judge Key 轮换 v1→v2","11:30","var(--warn)"],["ds_9f2a","发布版本 support-regression-2026-11","09:15","var(--pass)"],["ev_judge_q","评分器 rev3 → rev4","07:48","var(--info)"]].map(([t,d,tm,cl])=>`
+          <div class="feed-item"><span class="dotc" style="background:${cl}"></span>
+            <div><div class="who">${t}</div><div class="meta">${d}</div></div>
+            <div class="stat">${tm}</div></div>`).join("")}
+      </div>
+    </div>
+  </div>`;
+  const rail = `
+  <aside class="rail">
+    <div class="panel">
+      <div class="panel-head"><span class="led on"></span><h3>实时活动</h3><div class="spacer"></div><span class="micro-label">LIVE</span></div>
+      <div class="panel-body" style="padding-top:6px"><div class="feed">
+        ${[["research-agent-v2","r_8a3f12 · 14:32:18","1.4s","12.4k tok","var(--pass)",""],["support-prod","r_8a3f1e · 14:32:15","340ms","2.1k tok","var(--pass)",""],["data-pipeline","r_8a3ef2 · 14:32:11","","","var(--warn)",'<span class="chip-inline warn">Retry 1/3</span>'],["qa-eval-bot","r_8a3f12 · 14:32:18","","","var(--fail)",'<span class="chip-inline err">Tool Error</span>'],["code-reviewer","r_8a3ed1 · 14:32:08","892ms","5.7k tok","var(--pass)",""],["sales-assistant","r_8a3c2e · 14:31:54","1.1s","8.0k tok","var(--pass)",""]].map(([a,m,s,tk,cl,chip])=>`
+          <div class="feed-item"><span class="dotc" style="background:${cl}"></span>
+            <div><div class="who">${a}${chip}</div><div class="meta">${m}</div></div>
+            <div class="stat">${s}<small>${tk}</small></div></div>`).join("")}
+      </div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>待处理信号</h3><div class="spacer"></div><span class="micro-label">FROM TRACES</span></div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
+        ${traces.filter(t=>t.flagged).map(t=>`
+          <div style="display:flex;gap:10px;align-items:center;font-size:12.5px">
+            <span class="led busy"></span>
+            <span style="flex:1;color:var(--ink-2)">${esc(t.summary)}</span>
+            <button class="btn sm" onclick="traceToCase('${t.id}')">转为 Case</button>
+          </div>`).join("")}
+      </div>
+    </div>
+  </aside>`;
+  return shell(`
+    <p style="color:var(--muted);font-size:13px;margin:-10px 0 16px">Live monitoring · ${experiments.filter(e=>e.status==="running").length} 个实验进行中 · ${connections.filter(c=>!c.archived).length} 个端点在线 · ${tools.filter(t=>t.status==="ok").length} 个工具可用</p>
+    <div class="ov-grid">
+      <div>${kpis}${chartPanel}${runPanel}${bottom}</div>
+      ${rail}
+    </div>
+  `, "指挥中心", `<button class="btn primary" onclick="toast('原型演示：打开「新建实验」向导')">＋ 新建实验</button>`);
+}
+
+/* ================= 视图：实验列表 ================= */
+const EXP_PAGE = 4;
+function viewExperiments() {
+  const filters = [["all","全部"],["running","运行中"],["completed","已完成"],["failed","失败"],["cancelled","已取消"]];
+  const list = experiments.filter(e => state.expFilter === "all" || e.status === state.expFilter);
+  const pages = Math.max(1, Math.ceil(list.length / EXP_PAGE));
+  state.expPage = Math.min(state.expPage, pages);
+  const rows = list.slice((state.expPage-1)*EXP_PAGE, state.expPage*EXP_PAGE);
+  return shell(`
+    <div class="panel">
+      <div class="panel-head">
+        <div class="toolbar">${filters.map(([v,l])=>`<button class="chip ${state.expFilter===v?"active":""}" onclick="setExpFilter('${v}')">${l}</button>`).join("")}</div>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="toast('原型演示：打开「新建实验」向导')">＋ 新建实验</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>实验</th><th>数据集</th><th>Agent</th><th>进度</th><th>通过率</th><th>执行成功率</th><th>状态</th><th></th></tr></thead>
+        <tbody>${rows.map(e=>`
+          <tr onclick="openDetail('${e.id}')">
+            <td><div style="font-weight:600">${esc(e.name)}</div><div class="id-cell">${e.id} · ${e.started}</div></td>
+            <td class="id-cell">${e.dataset} rev${e.dsRev}</td>
+            <td class="id-cell">${e.agent}</td>
+            <td><div class="prog ${e.status==="completed"?"done":e.status==="failed"?"fail":""}" style="width:90px"><i style="width:${(e.done/e.total*100).toFixed(0)}%"></i></div><div class="id-cell mt8">${e.done}/${e.total}</div></td>
+            <td class="mono" style="font-weight:600">${fmtPct(e.successRate)}</td>
+            <td class="mono">${fmtPct(e.execRate)}</td>
+            <td>${badge(e.status)}</td>
+            <td onclick="event.stopPropagation()">${e.status==="running"?`<button class="btn sm danger" onclick="cancelExp('${e.id}')">取消</button>`:`<button class="btn sm ghost" onclick="rerunExp('${e.id}')">重跑</button>`}</td>
+          </tr>`).join("") || `<tr><td colspan="8"><div class="empty">该状态下暂无实验</div></td></tr>`}</tbody>
+      </table>
+      <div class="pager">
+        <span class="info">分页结果接口 · 第 ${state.expPage}/${pages} 页 · 共 ${list.length} 个实验</span>
+        ${Array.from({length:pages},(_,i)=>`<button class="${state.expPage===i+1?"cur":""}" onclick="setExpPage(${i+1})">${i+1}</button>`).join("")}
+      </div>
+    </div>
+  `, "实验");
+}
+function setExpFilter(v) { state.expFilter = v; state.expPage = 1; render(); }
+function setExpPage(p) { state.expPage = p; render(); }
+function cancelExp(id) {
+  const e = experiments.find(x=>x.id===id);
+  if (e) { e.status = "cancelled"; toast(`实验 ${id} 已发送取消信号，Worker 将在当前 Case 结束后停止`, false); render(); }
+}
+function rerunExp(id) { toast(`已基于 ${id} 的快照创建 rerun（仅更换 Agent，Case/评分器修订锁定）`); }
+</script>
+<script>
+/* ================= 视图：实验详情 ================= */
+const DETAIL_PAGE = 8;
+function openDetail(id) { state.detailId = id; state.detailPage = 1; state.route = "detail"; location.hash = "#/detail"; render(); }
+function viewDetail() {
+  const e = experiments.find(x => x.id === state.detailId) || experiments[0];
+  const pages = Math.ceil(caseResults.length / DETAIL_PAGE);
+  const rows = caseResults.slice((state.detailPage-1)*DETAIL_PAGE, state.detailPage*DETAIL_PAGE);
+  const tally = caseResults.reduce((m,c)=>(m[c.status]=(m[c.status]||0)+1,m),{});
+  return shell(`
+    <div class="panel">
+      <div class="panel-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+        <div>
+          <div class="micro-label">EXPERIMENT</div>
+          <div style="font-size:18px;font-weight:600">${esc(e.name)}</div>
+          <div class="id-cell mt8">${e.id} · 数据集 ${e.dataset} rev${e.dsRev} · ${e.agent}</div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span class="badge lock" title="数据来源三选一：dataset_id / dataset_version_id / benchmark_release_id">来源：Dataset Version</span>
+            <span class="badge queued" title="Target 指向已有 AgentVersion，内置 Harness 记为 provenance">模式 A · 已有 Agent</span>
+            <span class="badge lock" title="Evaluation Harness 修订进入 RunPlan 冻结">liteeval.legacy-simple@0.3.1</span>
+          </div>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+        ${["pass","fail","abstain","error","queued"].map(s=>`<div style="text-align:center"><div class="mono" style="font-size:20px;font-weight:600">${tally[s]||0}</div>${badge(s)}</div>`).join("")}
+        <button class="btn" onclick="go('compare')">与基线比较 →</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>实验统计</h3><span class="micro-label">GET /v1/experiments/{id}/statistics${e.status==="running"?" · 运行中标记 partial":""}</span>
+        <div class="spacer"></div>
+        <span class="micro-label">导出</span>
+        ${["json","jsonl","csv","zip"].map(f=>`<button class="btn sm ghost mono" onclick="toast('已请求 ${e.id} 的 ${f.toUpperCase()} 导出（ZIP 含工件并核对 SHA-256，128MB 上限）')">${f}</button>`).join("")}
+      </div>
+      <div class="panel-body">
+        <div class="stat-tiles">
+          <div class="stat-tile"><span class="micro-label">Target tokens</span><div class="v">167.8K <small>in 112.4K / out 55.4K</small></div></div>
+          <div class="stat-tile"><span class="micro-label">缓存命中</span><div class="v">41.2K <small>cached_in · 另 cache_write 8.9K</small></div></div>
+          <div class="stat-tile"><span class="micro-label">Reasoning tokens</span><div class="v">32.7K <small>仅计量，不含 CoT 正文</small></div></div>
+          <div class="stat-tile"><span class="micro-label">Judge tokens</span><div class="v">48.5K <small>重试 6 次已计入</small></div></div>
+          <div class="stat-tile"><span class="micro-label">上游费用</span><div class="v">$0.193 <small>USD · 4 币种样本齐全</small></div></div>
+          <div class="stat-tile"><span class="micro-label">Run 耗时</span><div class="v">3.4s <small>均值 · P95 4.8s</small></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Case 结果</h3>
+        <span class="micro-label">分页读取 · include_output=true 才附输出</span><div class="spacer"></div>
+        <button class="btn sm ghost" onclick="toast('已导出本页结果为 CSV（原型演示）')">导出 CSV</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>Case</th><th>输入摘要</th><th>评分器</th><th>得分</th><th>耗时</th><th>结果</th></tr></thead>
+        <tbody>${rows.map(c=>`
+          <tr onclick="openRun('${c.id}')">
+            <td class="id-cell">${c.id}</td>
+            <td>${esc(c.input)}</td>
+            <td class="id-cell">${c.judge}</td>
+            <td class="mono">${c.score}</td>
+            <td class="mono">${c.latency}</td>
+            <td>${badge(c.status)}</td>
+          </tr>`).join("")}</tbody>
+      </table>
+      <div class="pager">
+        <span class="info">第 ${state.detailPage}/${pages} 页 · 共 ${caseResults.length} 个 Case</span>
+        <button ${state.detailPage<=1?"disabled":""} onclick="setDetailPage(${state.detailPage-1})">‹</button>
+        ${Array.from({length:pages},(_,i)=>`<button class="${state.detailPage===i+1?"cur":""}" onclick="setDetailPage(${i+1})">${i+1}</button>`).join("")}
+        <button ${state.detailPage>=pages?"disabled":""} onclick="setDetailPage(${state.detailPage+1})">›</button>
+      </div>
+    </div>
+  `, "实验详情", `<button class="btn ghost" onclick="go('experiments')">← 返回列表</button>`);
+}
+function setDetailPage(p) { state.detailPage = p; render(); }
+
+function openCaseDrawer(caseId) {
+  const c = caseResults.find(x => x.id === caseId);
+  $("#drawer").innerHTML = `
+    <div class="drawer-head"><h3 style="font-size:15px">${c.id}</h3>${badge(c.status)}<div class="spacer"></div>
+      <button class="btn sm ghost" onclick="closeDrawer()">关闭 ✕</button></div>
+    <div class="drawer-body">
+      <span class="micro-label">输入</span>
+      <p style="margin:6px 0 16px">${esc(c.input)}</p>
+      <span class="micro-label">执行事件（事件 v2）</span>
+      <div class="timeline mt8" style="margin-bottom:16px">
+        <div class="ev"><b>HTTP 请求已映射</b> · POST /chat<span class="t">+0.0s</span></div>
+        <div class="ev"><b>工具调用</b> · query_order(order_id=1024)<span class="t">+0.8s</span></div>
+        <div class="ev hot"><b>Judge 评分</b> · ${c.judge} → ${c.score}<span class="t">+${c.latency}</span></div>
+      </div>
+      <span class="micro-label">原始响应（工件隔离存储）</span>
+      <div class="raw-block mt8">{
+  "run_id": "run_9c17e2",
+  "case_id": "${c.id}",
+  "idempotency_key": "8f3a…c2",
+  "status": "${c.status}",
+  "output": "订单 1024 已于 10-30 签收。",
+  "judge": { "name": "${c.judge}", "score": ${c.score === "—" ? "null" : c.score} },
+  "latency_ms": ${c.latency === "—" ? "null" : Math.round(parseFloat(c.latency) * 1000)}
+}</div>
+      <p style="margin-top:14px;font-size:12px;color:var(--muted)">重试与崩溃接管均携带同一 Idempotency-Key，外部 Agent 需自行去重。</p>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#drawer").classList.add("show");
+}
+function closeDrawer() { $("#overlay").classList.remove("show"); $("#drawer").classList.remove("show"); closeModal(); }
+$("#overlay").addEventListener("click", closeDrawer);
+
+/* ================= 视图：版本比较 ================= */
+const CMP_PAGE = 10;
+function viewCompare() {
+  const pages = Math.ceil(compareRows.length / CMP_PAGE);
+  const rows = compareRows.slice((state.compareCasePage-1)*CMP_PAGE, state.compareCasePage*CMP_PAGE);
+  const deltaBadge = { improved: '<span class="delta-chip up">▲ 改善</span>', unchanged: '<span class="delta-chip flat">＝ 不变</span>', regressed: '<span class="delta-chip down">▼ 回退</span>' };
+  const col = (title, id, rate, winner) => `
+    <div class="compare-col ${winner ? "winner" : ""}">
+      <div class="col-head">
+        <div class="micro-label">${title}</div>
+        <div style="font-weight:600;margin-top:4px">${id}</div>
+        <div class="big-rate" style="color:${winner ? "var(--pass)" : "var(--ink)"}">${rate}</div>
+        <div class="id-cell">summary.success_rate</div>
+      </div>
+      <div class="panel-body" style="font-size:12.5px;color:var(--ink-2)">
+        数据集 <span class="mono">ds_9f2a rev3</span> · 评分器 <span class="mono">llm-judge rev4</span><br/>
+        ${winner ? "Case 修订与评分器修订一致 ✓" : "基线实验 · 48 个 Case"}
+      </div>
+    </div>`;
+  return shell(`
+    <div class="compare-grid" style="margin-bottom:18px">
+      ${col("BASELINE", "exp_7a10 · v2.3", "50%", false)}
+      <div class="vs-mark">VS</div>
+      ${col("CANDIDATE", "exp_8c21 · v2.4", "78%", true)}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Case 级差异</h3>
+        <span class="badge pass">改善 21</span><span class="delta-chip flat">＝ 不变 24</span><span class="delta-chip down">▼ 回退 3</span>
+        <div class="spacer"></div><span class="micro-label">同 Case 修订 · 同评分器修订</span>
+      </div>
+      <table class="grid">
+        <thead><tr><th>Case</th><th>v2.3 基线</th><th>v2.4 候选</th><th>结论</th></tr></thead>
+        <tbody>${rows.map(r=>`
+          <tr onclick="openRun('${r.id}')">
+            <td class="id-cell">${r.id}</td><td>${badge(r.left)}</td><td>${badge(r.right)}</td><td>${deltaBadge[r.delta]}</td>
+          </tr>`).join("")}</tbody>
+      </table>
+      <div class="pager">
+        <span class="info">第 ${state.compareCasePage}/${pages} 页</span>
+        <button ${state.compareCasePage<=1?"disabled":""} onclick="setCmpPage(${state.compareCasePage-1})">‹</button>
+        ${Array.from({length:pages},(_,i)=>`<button class="${state.compareCasePage===i+1?"cur":""}" onclick="setCmpPage(${i+1})">${i+1}</button>`).join("")}
+        <button ${state.compareCasePage>=pages?"disabled":""} onclick="setCmpPage(${state.compareCasePage+1})">›</button>
+      </div>
+    </div>
+  `, "版本比较");
+}
+function setCmpPage(p) { state.compareCasePage = p; render(); }
+
+/* ================= 视图：Benchmark 中心（目录包 / 数据集草稿 / 命名版本 / 归档） ================= */
+function viewDatasets() {
+  const list = datasets.filter(d => state.datasetTab === "archived" ? d.archived : !d.archived);
+  let mainPanel = "";
+  if (state.datasetTab === "packages") {
+    const stageBadge = { published: '<span class="badge pass">已发布</span>', validated: '<span class="badge queued">已校验 · 待准备</span>', prepared: '<span class="badge queued">依赖已固定</span>', failed: '<span class="badge fail">失败</span>' };
+    mainPanel = `
+    <div class="panel">
+      <div class="panel-head"><h3>Benchmark 目录包</h3>
+        <span class="micro-label">dataset.toml + tasks/ + judge/ · Release 内容不可变</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="openGhPull()">＋ 导入 Benchmark</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>Benchmark</th><th>版本</th><th>来源</th><th>任务</th><th>Release / 锁摘要</th><th>状态</th><th></th></tr></thead>
+        <tbody>${benchmarkPackages.map(b=>`
+          <tr onclick="openBenchTasks('${b.id}')">
+            <td><div style="font-weight:600">${esc(b.name)}</div><div class="id-cell">${b.bid} · ${esc(b.desc)}</div></td>
+            <td class="mono">${b.version}</td>
+            <td class="id-cell">${esc(b.source)}</td>
+            <td class="mono">${b.tasks} 题</td>
+            <td class="id-cell">${b.release}<br/>${b.lockDigest}</td>
+            <td><span class="badge pass">已发布</span></td>
+            <td onclick="event.stopPropagation()"><button class="btn sm" onclick="toast('已选择 ${b.bid}@${b.version}，实验将绑定 release 锁摘要 ${b.lockDigest.slice(0,14)}…')">用于新实验</button></td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>导入作业</h3><span class="micro-label">获取 → 校验 → 准备 → 原子发布 · Git API 为提案</span></div>
+      <table class="grid">
+        <thead><tr><th>作业</th><th>来源</th><th>流水线</th><th>差异预览</th><th>时间</th></tr></thead>
+        <tbody>${importJobs.map(j=>`
+          <tr>
+            <td class="id-cell">${j.id}${j.proposal?' <span class="chip-inline warn">提案</span>':""}</td>
+            <td class="id-cell">${esc(j.src)}</td>
+            <td><div style="display:flex;gap:6px;align-items:center">
+              ${["获取","校验","准备","发布"].map((s,i)=>{
+                const done = j.stage==="published" || (j.stage==="validated" && i<=1) || (j.stage==="prepared" && i<=2);
+                const cur = (j.stage==="validated" && i===1) || (j.stage==="prepared" && i===2);
+                return `<span class="badge ${done?(cur?"queued":"pass"):"abstain"}" style="font-size:10px">${s}</span>${i<3?'<span style="color:var(--muted)">→</span>':""}`;
+              }).join("")}
+            </div></td>
+            <td class="mono" style="font-size:12px">${esc(j.diff)}</td>
+            <td class="id-cell">${esc(j.when)}</td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-2)">目录包发布同时固定题目资源、评分代码、环境定义与内容 digest（benchmark.lock.json）；同一版本内容不变幂等、内容变化须发布新版本。Git 来源只记录 repository/ref/resolved_commit，不运行 hooks 与下载脚本。</p>`;
+  } else if (state.datasetTab === "versions") {
+    mainPanel = `
+    <div class="panel">
+      <div class="panel-head"><h3>已发布版本</h3><span class="micro-label">冻结 Case id/revision/hash/顺序 · 无修改与删除接口</span></div>
+      <table class="grid">
+        <thead><tr><th>版本</th><th>来源</th><th>Case 数</th><th>快照哈希</th><th>发布时间</th><th></th></tr></thead>
+        <tbody>${datasetVersions.map(v=>`
+          <tr onclick="toast('${v.id} 的冻结 Case 列表（原型演示，不读取当前草稿）')">
+            <td><div style="font-weight:600">${esc(v.name)}</div><div class="id-cell">${v.dataset} · ${esc(v.desc)}</div></td>
+            <td><span class="badge ${v.source.startsWith("GitHub")?"queued":"lock"}">${v.source.startsWith("GitHub")?"GitHub Bench":"本地 Case"}</span></td>
+            <td class="mono">${v.cases}</td><td class="id-cell">${v.hash}</td><td class="id-cell">${v.created}</td>
+            <td onclick="event.stopPropagation()"><button class="btn sm" onclick="toast('已选中版本 ${v.name}，可用于新建实验（preflight 将绑定 snapshot_hash）')">用于新实验</button></td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>`;
+  } else {
+    mainPanel = `
+    <div class="panel">
+      <div class="panel-head">
+        <span class="micro-label">DRAFT / SNAPSHOTS · 普通 JSON/CSV 数据集沿用旧流程</span>
+        <div class="spacer"></div>
+        <button class="btn sm ghost" onclick="toast('原型演示：导入预览 → 校验非法行后再正式入库')">批量导入</button>
+        <button class="btn primary sm" onclick="toast('原型演示：发布命名版本，冻结当前未归档 Case')">发布版本</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>数据集</th><th>修订</th><th>Case 数</th><th>创建时间</th><th>不可变</th><th>操作</th></tr></thead>
+        <tbody>${list.map(d=>`
+          <tr onclick="toast('${d.id} rev${d.rev} 的 Case 列表（原型演示）')">
+            <td><div style="font-weight:600">${esc(d.name)}</div>${d.note?`<div class="id-cell">${esc(d.note)}</div>`:""}</td>
+            <td class="mono">rev${d.rev}</td><td class="mono">${d.cases}</td><td class="id-cell">${d.created}</td>
+            <td><span class="badge lock">🔒 快照锁定</span></td>
+            <td onclick="event.stopPropagation()">
+              ${d.archived
+                ? `<button class="btn sm ghost" onclick="unarchiveDs('${d.id}')">取消归档</button>`
+                : `<button class="btn sm ghost" onclick="openEditConflict('${d.id}')">编辑 Case</button>
+                   <button class="btn sm danger" onclick="archiveDs('${d.id}')">归档</button>`}
+            </td>
+          </tr>`).join("") || `<tr><td colspan="6"><div class="empty">暂无归档数据集</div></td></tr>`}</tbody>
+      </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-2)">归档后数据集不出现在新建实验的选择列表，历史实验快照仍可完整回放。编辑 Case 时若修订已被他人推进，将触发冲突检查（409）。</p>`;
+  }
+  return shell(`
+    <div class="tabs">
+      <button class="tab ${state.datasetTab==="packages"?"active":""}" onclick="setDsTab('packages')">目录包</button>
+      <button class="tab ${state.datasetTab==="active"?"active":""}" onclick="setDsTab('active')">数据集草稿</button>
+      <button class="tab ${state.datasetTab==="versions"?"active":""}" onclick="setDsTab('versions')">命名版本</button>
+      <button class="tab ${state.datasetTab==="archived"?"active":""}" onclick="setDsTab('archived')">已归档</button>
+    </div>
+    ${mainPanel}
+  `, "Benchmarks");
+}
+function setDsTab(t) { state.datasetTab = t; render(); }
+function archiveDs(id) { const d = datasets.find(x=>x.id===id); d.archived = true; toast(`数据集 ${id} 已归档，历史实验不受影响`); render(); }
+function unarchiveDs(id) { const d = datasets.find(x=>x.id===id); d.archived = false; toast(`数据集 ${id} 已恢复`); render(); }
+
+/* Benchmark 任务清单抽屉 */
+function openBenchTasks(bpId) {
+  const b = benchmarkPackages.find(x=>x.id===bpId);
+  $("#drawer").innerHTML = `
+    <div class="drawer-head"><h3 style="font-size:15px">${esc(b.name)}</h3><span class="badge pass">${b.version}</span><div class="spacer"></div>
+      <button class="btn sm ghost" onclick="closeDrawer()">关闭 ✕</button></div>
+    <div class="drawer-body">
+      <span class="micro-label">任务清单 · ${b.tasks} 题</span>
+      ${benchmarkTasks.map(t=>`
+        <div class="panel" style="margin:12px 0 0">
+          <div class="panel-body">
+            <div style="display:flex;align-items:center;gap:10px"><b class="mono">${t.tid}</b><span style="font-size:12.5px">${esc(t.title)}</span>
+              <span class="badge queued" style="margin-left:auto">${t.category}</span></div>
+            <dl class="kv" style="margin-top:10px">
+              <dt>environment</dt><dd class="mono">${t.env} · 预算 ${t.budget}</dd>
+              <dt>artifacts</dt><dd class="mono">${t.artifacts.join("，")}（required）</dd>
+              <dt>judge</dt><dd>${t.checks.map(c=>`<span class="badge ${c.type==="command"?"lock":"queued"}" style="margin-right:6px">${c.id} · ${c.type} · 权重 ${c.weight}${c.must?" · 必过":""}</span>`).join("")}</dd>
+              <dt>aggregate</dt><dd class="mono">weighted_mean · 通过阈值 ${t.threshold} · must_pass 失败则整题为 0</dd>
+            </dl>
+          </div>
+        </div>`).join("")}
+      <p style="margin-top:14px;font-size:12px;color:var(--muted)">Ground Truth、rubric、test.py 属于 Judge 私有材料，不进入 Target 可见工作区；隐藏检查在独立容器执行。</p>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#drawer").classList.add("show");
+}
+
+/* 从 GitHub 拉取 Bench */
+function openGhPull() {
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label">BENCHMARK IMPORT JOB</span>
+      <h3 style="font-size:17px;margin:8px 0 14px">导入 Benchmark 包</h3>
+      <div class="field"><label>来源（本地目录 / Git 仓库）</label><input id="ghRepo" value="github.com/example/agent-bench-cn" /></div>
+      <div class="two-col" style="gap:12px">
+        <div class="field"><label>分支 / Tag（解析为 commit 后固定）</label><input id="ghRef" value="v1.2" /></div>
+        <div class="field"><label>子路径</label><input id="ghPath" value="benchmarks/" /></div>
+      </div>
+      <div class="field"><label>私有仓库凭据（可选）</label><input placeholder="ghp_•••••••• 留空按公开仓库获取" /></div>
+      <div class="csrf-note"><span class="led on" style="margin-top:4px"></span>
+        <span>导入走<b>流水线</b>：获取来源 → tomllib 静态校验（未知字段报错）→ 受控准备镜像/依赖 → 原子发布 Release。差异预览列出新增/修改/移除任务；Git hooks 与 LFS 脚本不会被执行。<b>Git 来源接口当前为提案，本地目录导入已实现。</b></span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" id="ghBtn" onclick="doGhPull()">${state.ghPulling ? "导入中…" : "创建导入作业"}</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function doGhPull() {
+  if (state.ghPulling) return;
+  state.ghPulling = true;
+  const repo = $("#ghRepo").value || "github.com/example/agent-bench-cn";
+  const ref = $("#ghRef").value || "main";
+  closeModal();
+  toast(`导入作业已创建：获取 ${repo}@${ref} 并静态校验…`);
+  setTimeout(() => {
+    importJobs.unshift({ id: "ij_" + (2042 + importJobs.length), src: (repo.includes("/") && !repo.startsWith(".") ? "Git " : "") + repo + " @ " + ref, stage: "validated", diff: "+18 任务 · 0 修改 · 0 移除", when: "刚刚", proposal: !repo.startsWith(".") && !repo.startsWith("benchmarks") });
+    state.ghPulling = false;
+    state.datasetTab = "packages";
+    if (state.route === "datasets") render();
+    toast(`校验通过：18 个任务结构有效 · 待执行 prepare 固定依赖后发布`);
+  }, 2400);
+}
+
+/* 修订冲突弹窗 */
+function openEditConflict(dsId) {
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label" style="color:var(--warn)">REVISION CONFLICT</span>
+      <h3 style="font-size:17px;margin:8px 0 6px">Case 修订已被推进</h3>
+      <p style="font-size:13px;color:var(--ink-2)">你基于 <span class="mono">case_0007 rev2</span> 编辑，但数据集 ${dsId} 中该 Case 已推进到 <span class="mono">rev3</span>。继续保存将创建 rev4，不会覆盖 rev3。</p>
+      <div class="conflict-diff">
+        <div class="row"><div class="cell micro-label">字段</div><div class="cell micro-label">你的 rev2</div><div class="cell micro-label">当前 rev3</div></div>
+        <div class="row"><div class="cell">期望答案</div><div class="cell old">7 个工作日内退款</div><div class="cell new">3–5 个工作日原路退回</div></div>
+        <div class="row"><div class="cell">标签</div><div class="cell old">refund</div><div class="cell new">refund, sla</div></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">放弃修改</button>
+      <button class="btn" onclick="closeModal();toast('已加载 rev3 作为编辑基线')">以 rev3 为基线</button>
+      <button class="btn primary" onclick="closeModal();toast('已保存为 case_0007 rev4')">仍要保存为 rev4</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function closeModal() { $("#modal").classList.remove("show"); if (!$("#drawer").classList.contains("show")) $("#overlay").classList.remove("show"); }
+
+/* ================= 视图：Harnesses（双层 Harness 注册表） ================= */
+function viewHarnesses() {
+  const roleBadge = r => r === "agent" ? '<span class="badge queued">Agent Harness</span>' : '<span class="badge lock">Evaluation Harness</span>';
+  return shell(`
+    <div class="panel">
+      <div class="panel-head"><h3>Harness 修订</h3>
+        <span class="micro-label">执行身份 = 代码/镜像/配置 digest，不取版本名称 · 修订不可变</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="toast('原型演示：harness validate → prepare → register（CLI 入口为提案）')">＋ 注册 Harness</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>Harness</th><th>角色</th><th>版本</th><th>来源</th><th>Digest</th><th>能力</th><th>状态</th></tr></thead>
+        <tbody>${harnessRevisions.map(h=>`
+          <tr style="${h.proposal?"opacity:.6":""}">
+            <td><div style="font-weight:600" class="mono">${h.hid}</div><div class="id-cell">${h.id}</div></td>
+            <td>${roleBadge(h.role)}</td>
+            <td class="mono">${h.version}</td>
+            <td class="id-cell">${esc(h.src)}</td>
+            <td class="id-cell">${h.digest}</td>
+            <td>${h.caps.map(c=>`<span class="badge abstain" style="margin:1px 3px 1px 0;font-size:10px">${c}</span>`).join("")}</td>
+            <td>${h.proposal?`<span class="badge error">提案</span> `:""}<span style="font-size:12px;color:var(--ink-2)">${h.status}</span></td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">两种被测模式（v2 提案）</span>
+        <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px"><b style="color:var(--ink)">模式 A · 评测已有 Agent</b>：Target 指向 AgentVersion（HTTP/CLI），其内置 Harness 作为 provenance 记录，不再强套外层模型循环。<br/><br/><b style="color:var(--ink)">模式 B · 模型 + 可替换 Harness</b>：Target 指向模型连接与冻结参数，单独选择 Agent Harness 修订——固定 Harness 可比较模型，固定模型可比较 Harness。</p>
+      </div></div>
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">接入纪律</span>
+        <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px">公共仓库来源不表示已兼容：原生协议项目固定 commit 受控构建；自带格式的项目需要 IntegrationAdapter 并显式声明 environment/target/grading/cleanup 的 owner。注册成功不等于通过能力验收。</p>
+      </div></div>
+    </div>
+  `, "Harnesses");
+}
+
+/* ================= 视图：评分器（含 Worker 评分预览） ================= */
+function viewEvaluators() {
+  const active = evaluators.filter(e=>!e.archived), archived = evaluators.filter(e=>e.archived);
+  return shell(`
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head"><h3>评分器</h3><div class="spacer"></div><button class="btn primary sm" onclick="toast('原型演示：新建评分器向导')">＋ 新建</button></div>
+        <table class="grid">
+          <thead><tr><th>名称</th><th>类型</th><th>修订</th><th>操作</th></tr></thead>
+          <tbody>${active.map(e=>`
+            <tr>
+              <td><div style="font-weight:600" class="mono">${e.id}</div><div class="id-cell">${esc(e.desc)}</div></td>
+              <td><span class="badge queued">${e.kind}</span></td><td class="mono">rev${e.rev}</td>
+              <td><button class="btn sm" onclick="archiveEv('${e.id}')">归档</button></td>
+            </tr>`).join("")}
+            ${archived.map(e=>`<tr style="opacity:.55"><td><div class="mono">${e.id}</div><div class="id-cell">${esc(e.desc)}</div></td><td><span class="badge abstain">已归档</span></td><td class="mono">rev${e.rev}</td><td><button class="btn sm ghost" onclick="unarchiveEv('${e.id}')">恢复</button></td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>评分预览</h3><span class="micro-label">WORKER 执行 · 不写正式结果</span></div>
+        <div class="panel-body">
+          <div class="field"><label>评分器</label>
+            <select id="pvEv">${active.map(e=>`<option>${e.id} rev${e.rev}</option>`).join("")}</select></div>
+          <div class="field"><label>Case</label>
+            <select id="pvCase">${caseResults.slice(0,6).map(c=>`<option>${c.id}</option>`).join("")}</select></div>
+          <button class="btn primary" id="pvBtn" onclick="runPreview()" ${state.previewRunning?"disabled":""}>
+            ${state.previewRunning ? '<span class="led busy"></span> Worker 执行中…' : "运行预览"}</button>
+          <p style="font-size:12px;color:var(--muted);margin-top:10px">预览由 Worker 真实执行评分逻辑并保存预览记录，<b>不覆盖</b>正式实验的评分结果。</p>
+        </div>
+        <div class="panel-head" style="border-top:1px solid var(--line)"><h3>预览记录</h3></div>
+        <table class="grid">
+          <thead><tr><th>ID</th><th>评分器</th><th>Case</th><th>结果</th><th>Worker</th></tr></thead>
+          <tbody id="pvRows">${previews.map(p=>`
+            <tr><td class="id-cell">${p.id}</td><td class="id-cell">${p.evaluator}</td><td class="id-cell">${p.case}</td>
+            <td>${p.status==="running"?'<span class="badge running"><span class="led busy"></span>执行中</span>':`<span class="mono" style="font-size:12px">${esc(p.score)}</span>`}</td>
+            <td class="id-cell">${p.worker}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>
+  `, "Grader");
+}
+function archiveEv(id) { evaluators.find(e=>e.id===id).archived = true; toast(`评分器 ${id} 已归档，进行中实验继续锁定原修订`); render(); }
+function unarchiveEv(id) { evaluators.find(e=>e.id===id).archived = false; toast(`评分器 ${id} 已恢复`); render(); }
+function runPreview() {
+  if (state.previewRunning) return;
+  state.previewRunning = true;
+  const ev = $("#pvEv") ? $("#pvEv").value : "llm-judge/quality rev4";
+  const cs = $("#pvCase") ? $("#pvCase").value : "case_0001";
+  const pv = { id: "pv_" + (1043 + previews.length), evaluator: ev, case: cs, status: "running", score: "", ranAt: "刚刚", worker: "worker-02" };
+  previews.unshift(pv); render();
+  setTimeout(() => {
+    pv.status = "done"; pv.score = (Math.random() > .3 ? (0.7 + Math.random() * 0.25).toFixed(2) + " / pass" : (0.3 + Math.random() * 0.3).toFixed(2) + " / fail");
+    state.previewRunning = false;
+    if (state.route === "evaluators") render();
+    toast(`预览 ${pv.id} 完成：${pv.score}`);
+  }, 2200);
+}
+
+/* ================= 视图：Trace 导入 ================= */
+function viewTraces() {
+  return shell(`
+    <div class="panel">
+      <div class="panel-head"><h3>生产 Trace</h3>
+        <span class="micro-label">已选 <span id="trSelCount">${state.traceSelected.size}</span> 条</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="batchToCase()" ${state.traceSelected.size?"":"disabled"}>批量转为 Case</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th></th><th>Trace</th><th>Agent</th><th>时间</th><th>摘要</th><th></th></tr></thead>
+        <tbody>${traces.map(t=>`
+          <tr onclick="toggleTrace('${t.id}')">
+            <td><input type="checkbox" ${state.traceSelected.has(t.id)?"checked":""} onclick="event.stopPropagation();toggleTrace('${t.id}')" style="accent-color:var(--accent)"/></td>
+            <td class="id-cell">${t.id}</td><td class="id-cell">${t.agent}</td><td class="mono">${t.when}</td>
+            <td>${t.flagged?'<span class="led busy" style="display:inline-block;margin-right:6px"></span>':""}${esc(t.summary)}</td>
+            <td onclick="event.stopPropagation()"><button class="btn sm" onclick="traceToCase('${t.id}')">转为 Case</button></td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-2)">转为 Case 后可补充期望答案与标签，再冻结进新的数据集快照；缺少期望答案的 Case 在评测时会计为 <b>弃判</b>，不冒充通过。</p>
+  `, "Trace 导入");
+}
+function toggleTrace(id) {
+  state.traceSelected.has(id) ? state.traceSelected.delete(id) : state.traceSelected.add(id);
+  render();
+}
+function traceToCase(id) { toast(`Trace ${id} 已转为 Case（草稿），请补充期望答案`); }
+function batchToCase() {
+  const n = state.traceSelected.size;
+  state.traceSelected.clear();
+  toast(`${n} 条 Trace 已转为 Case 草稿并加入待整理列表`);
+  render();
+}
+
+/* ================= 视图：LLM / Endpoint（不绑定用途，可用性导向） ================= */
+function viewConnections() {
+  const active = connections.filter(c=>!c.archived), archived = connections.filter(c=>c.archived);
+  const healthBadge = h => ({ ok: '<span class="badge pass"><span class="led on"></span>可用</span>', degraded: '<span class="badge error">延迟偏高</span>', unknown: '<span class="badge abstain">未检测</span>' }[h]);
+  const row = (c, dim) => `
+    <tr style="${dim ? "opacity:.55" : ""}">
+      <td><div style="font-weight:600">${esc(c.name)}</div><div class="id-cell">${c.id}</div></td>
+      <td><span class="badge ${c.kind==="http_agent"?"lock":"queued"} mono" style="font-size:10px">${c.kind}</span></td>
+      <td class="id-cell">${esc(c.endpoint)}${c.model !== "—" ? `<br/>model: ${esc(c.model)}` : ""}</td>
+      <td>${c.keyRef ? `<span class="badge pass">🔒 ${c.keyRef} · v${c.keyVer}</span>` : '<span class="badge abstain">无凭据</span>'}</td>
+      <td>${healthBadge(c.health)}<div class="id-cell mt8">${c.latency}</div></td>
+      <td>${dim
+        ? `<button class="btn sm ghost" onclick="connAction('${c.id}','unarchive')">恢复</button>`
+        : `<button class="btn sm ghost" onclick="testEndpoint('${c.id}')">检测</button>
+           <button class="btn sm ghost" onclick="openReplaceKey('${c.id}')">换绑 Key</button>
+           <button class="btn sm danger" onclick="connAction('${c.id}','archive')">归档</button>`}</td>
+    </tr>`;
+  return shell(`
+    <div class="panel">
+      <div class="panel-head"><h3>LLM / Endpoint</h3>
+        <span class="micro-label">只保证端点已载入且可用 · 是否作为 Target/Judge 由具体 Case 与 Grader 绑定决定</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="openAddConn()">＋ 新建端点</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>名称</th><th>类型</th><th>Endpoint / Model</th><th>凭据引用</th><th>可用性</th><th>操作</th></tr></thead>
+        <tbody>${active.map(c=>row(c,false)).join("")}${archived.map(c=>row(c,true)).join("")}</tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">与 Key 的关系</span>
+        <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px">端点不直接保存密钥原文，按名称引用 <b style="color:var(--ink)">Keys</b> 页中的条目（如 <span class="mono">LLM_API_KEY</span>）。同一个 Key 可被多个端点、工具复用；轮换 Key 后所有引用处自动生效，历史执行结果不改写。</p>
+      </div></div>
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">可用性口径</span>
+        <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px">「检测」发起一次最小调用（如 <span class="mono">/models</span> 或 ping），仅验证端点可达与凭据有效，<b>不消耗评测额度</b>。Worker 心跳另按连接上报能否解密——两端都绿不代表模型质量，以实际 Run 为准。</p>
+      </div></div>
+    </div>
+  `, "LLM / Endpoint");
+}
+function testEndpoint(id) {
+  const c = connections.find(x=>x.id===id);
+  c.health = "unknown"; c.latency = "检测中…"; render();
+  setTimeout(() => {
+    const ok = Math.random() > 0.15;
+    c.health = ok ? "ok" : "degraded";
+    c.latency = ok ? (120 + Math.floor(Math.random()*600)) + "ms" : (1.5 + Math.random()).toFixed(1) + "s";
+    if (state.route === "connections") render();
+    toast(`端点 ${id} 检测${ok ? "通过" : "延迟偏高"} · ${c.latency}`, ok);
+  }, 1200);
+}
+function openAddConn() {
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label">NEW ENDPOINT</span>
+      <h3 style="font-size:17px;margin:8px 0 14px">新建 LLM / Endpoint</h3>
+      <div class="field"><label>名称</label><input id="ncName" value="我的评测模型" /></div>
+      <div class="two-col" style="gap:12px">
+        <div class="field"><label>类型</label>
+          <select id="ncKind"><option value="openai_compatible">openai_compatible</option><option value="http_agent">http_agent</option></select></div>
+        <div class="field"><label>凭据引用（Keys 页管理）</label>
+          <select id="ncKeyRef"><option value="">不关联凭据</option>${userKeys.map(k=>`<option>${k.name}</option>`).join("")}</select></div>
+      </div>
+      <div class="field"><label>Endpoint（不含账号密码或 query 参数）</label><input id="ncEndpoint" value="https://api.model-vendor.example.com/v1" /></div>
+      <div class="field"><label>Model（openai_compatible 必填）</label><input id="ncModel" placeholder="model-name" /></div>
+      <p style="font-size:12px;color:var(--muted)">保存后自动执行一次可用性检测；端点在此不区分用途，角色在实验/Grader 绑定时确定。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doAddConn()">保存并检测</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function doAddConn() {
+  const name = $("#ncName").value || "未命名端点";
+  const keyRef = $("#ncKeyRef").value || null;
+  const nc = { id: "mc_" + Math.random().toString(16).slice(2,6), name, kind: $("#ncKind").value, endpoint: $("#ncEndpoint").value, model: $("#ncModel").value || "—", keyRef, keyVer: keyRef ? 1 : 0, archived: false, health: "unknown", latency: "—" };
+  connections.unshift(nc);
+  if (keyRef) { const k = userKeys.find(x=>x.name===keyRef); if (k && !k.usedBy.includes(nc.id)) k.usedBy.push(nc.id); }
+  closeModal();
+  toast(`端点「${name}」已保存，可用性检测中…`);
+  render();
+  setTimeout(()=>testEndpoint(nc.id), 400);
+}
+function openReplaceKey(id) {
+  const c = connections.find(x=>x.id===id);
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label">REBIND KEY · ${c.id}</span>
+      <h3 style="font-size:17px;margin:8px 0 6px">换绑 Key</h3>
+      <p style="font-size:13px;color:var(--ink-2)">将端点改绑到另一个 Key 条目，或解除凭据（之后按无认证服务调用）。换绑递增 <span class="mono">key_version</span>，历史执行结果不改写。</p>
+      <div class="field mt16"><label>Key 条目</label>
+        <select id="rkRef"><option value="">解除凭据</option>${userKeys.map(k=>`<option ${k.name===c.keyRef?"selected":""}>${k.name}</option>`).join("")}</select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doRebindKey('${id}')">确认换绑</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function doRebindKey(id) {
+  const c = connections.find(x=>x.id===id);
+  const ref = $("#rkRef").value || null;
+  if (c.keyRef) { const old = userKeys.find(x=>x.name===c.keyRef); if (old) old.usedBy = old.usedBy.filter(u=>u!==id); }
+  c.keyRef = ref; if (ref) { c.keyVer++; const k = userKeys.find(x=>x.name===ref); if (k && !k.usedBy.includes(id)) k.usedBy.push(id); }
+  closeModal();
+  toast(ref ? `${id} 已换绑 ${ref}，key_version → v${c.keyVer}` : `${id} 已解除凭据，之后按无认证服务调用`);
+  render();
+}
+function connAction(id, action) {
+  const c = connections.find(x=>x.id===id);
+  if (action === "archive") { c.archived = true; toast(`端点 ${id} 已归档：禁止新绑定与后续调用，历史结果保留`); }
+  if (action === "unarchive") { c.archived = false; toast(`端点 ${id} 已恢复`); }
+  render();
+}
+
+/* ================= 视图：Keys（用户自定义密钥，独立管理） ================= */
+function viewKeys() {
+  return shell(`
+    <div class="panel">
+      <div class="panel-head"><h3>Keys</h3>
+        <span class="micro-label">只存密文 · 永不回显 · 按名称被端点与工具引用</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="openAddKey()">＋ 添加 Key</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>名称</th><th>值</th><th>被引用</th><th>创建</th><th>最近轮换</th><th>操作</th></tr></thead>
+        <tbody>${userKeys.map(k=>`
+          <tr>
+            <td class="mono" style="font-weight:600">${esc(k.name)}</td>
+            <td class="mono" style="color:var(--muted)">${esc(k.masked)}</td>
+            <td>${k.usedBy.length ? k.usedBy.map(u=>`<span class="badge queued mono" style="font-size:10px;margin-right:4px">${u}</span>`).join("") : '<span style="color:var(--muted);font-size:12px">未被引用</span>'}</td>
+            <td class="id-cell">${k.created}</td>
+            <td class="id-cell">${k.rotatedAt || "—"}</td>
+            <td>
+              <button class="btn sm ghost" onclick="rotateKey('${k.id}')">轮换</button>
+              <button class="btn sm danger" onclick="deleteKey('${k.id}')">删除</button>
+            </td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <div class="panel"><div class="panel-body">
+      <span class="micro-label">用法示例</span>
+      <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px">
+        <span class="mono">LLM_API_KEY</span> 供 LLM 端点调用 · <span class="mono">MCP_SEARCH_KEY</span> 供远端 MCP 工具鉴权 · <span class="mono">GITHUB_TOKEN</span> 供 Benchmark Git 导入。
+        删除仍被引用的 Key 会被阻止；轮换后引用处自动使用新值，正在排队的任务沿用领取时的版本并记录差异。</p>
+    </div></div>
+  `, "Keys");
+}
+function openAddKey() {
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label">NEW KEY</span>
+      <h3 style="font-size:17px;margin:8px 0 14px">添加 Key</h3>
+      <div class="field"><label>名称（建议大写下划线，如 LLM_API_KEY）</label><input id="nkName" placeholder="MY_SERVICE_KEY" /></div>
+      <div class="field"><label>值（仅提交一次，永不回显）</label><input id="nkValue" type="password" placeholder="sk-••••••••" /></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doAddKey()">加密保存</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function doAddKey() {
+  const name = ($("#nkName").value || "").trim().toUpperCase().replace(/\s+/g,"_");
+  if (!name) { toast("请填写 Key 名称", false); return; }
+  if (userKeys.some(k=>k.name===name)) { toast(`Key ${name} 已存在`, false); return; }
+  const v = $("#nkValue").value;
+  userKeys.unshift({ id: "key_" + Math.random().toString(16).slice(2,6), name, masked: v ? v.slice(0,3) + "••••••••" + v.slice(-4) : "••••••••", usedBy: [], created: "刚刚", rotatedAt: null });
+  closeModal();
+  toast(`Key ${name} 已加密保存`);
+  render();
+}
+function rotateKey(id) {
+  const k = userKeys.find(x=>x.id===id);
+  k.rotatedAt = "刚刚";
+  toast(`Key ${k.name} 已轮换，${k.usedBy.length} 个引用处自动生效`);
+  render();
+}
+function deleteKey(id) {
+  const k = userKeys.find(x=>x.id===id);
+  if (k.usedBy.length) { toast(`Key ${k.name} 仍被 ${k.usedBy.join("、")} 引用，请先解绑`, false); return; }
+  userKeys.splice(userKeys.indexOf(k), 1);
+  toast(`Key ${k.name} 已删除`);
+  render();
+}
+
+/* ================= 视图：Tools（内置能力 + 远端 MCP 工具） ================= */
+function viewTools() {
+  const statusBadge = s => ({ builtin: '<span class="badge lock">平台内置</span>', ok: '<span class="badge pass"><span class="led on"></span>可用</span>', unknown: '<span class="badge abstain">未检测</span>', down: '<span class="badge fail">不可达</span>' }[s]);
+  return shell(`
+    <div class="panel">
+      <div class="panel-head"><h3>Tools</h3>
+        <span class="micro-label">声明 ≠ 可用 · 工具需在 Harness/adapter 能力范围内才可被任务使用</span>
+        <div class="spacer"></div>
+        <button class="btn primary sm" onclick="openAddTool()">＋ 接入 MCP 工具</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>工具</th><th>类型</th><th>Endpoint</th><th>凭据引用</th><th>能力</th><th>状态</th><th></th></tr></thead>
+        <tbody>${tools.map(t=>`
+          <tr>
+            <td><div style="font-weight:600" class="mono">${esc(t.name)}</div><div class="id-cell">${t.id}</div></td>
+            <td><span class="badge ${t.kind==="builtin"?"lock":"queued"} mono" style="font-size:10px">${t.kind==="builtin"?"builtin":"mcp_remote"}</span></td>
+            <td class="id-cell">${esc(t.endpoint)}</td>
+            <td>${t.keyRef ? `<span class="badge pass">🔒 ${t.keyRef}</span>` : '<span style="color:var(--muted);font-size:12px">—</span>'}</td>
+            <td>${t.caps.map(c=>`<span class="badge abstain" style="margin:1px 3px 1px 0;font-size:10px">${c}</span>`).join("")}</td>
+            <td>${statusBadge(t.status)}</td>
+            <td>${t.kind!=="builtin"?`<button class="btn sm ghost" onclick="testTool('${t.id}')">检测</button>`:""}</td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-2)">远端 MCP 工具的 Key 在 <b>Keys</b> 页统一管理；Benchmark 的 task.toml 声明 <span class="mono">capabilities</span> 需求后，还需对应 adapter 实现了执行通道才真正可用，预检会拒绝不满足的组合。</p>
+  `, "Tools");
+}
+function openAddTool() {
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <span class="micro-label">NEW MCP TOOL</span>
+      <h3 style="font-size:17px;margin:8px 0 14px">接入远端 MCP 工具</h3>
+      <div class="field"><label>名称</label><input id="ntName" placeholder="web-search" /></div>
+      <div class="field"><label>MCP Endpoint</label><input id="ntEndpoint" placeholder="https://mcp.vendor.example.com/search" /></div>
+      <div class="field"><label>凭据引用（Keys 页管理）</label>
+        <select id="ntKeyRef"><option value="">无需凭据</option>${userKeys.map(k=>`<option>${k.name}</option>`).join("")}</select></div>
+      <div class="field"><label>能力标签（逗号分隔）</label><input id="ntCaps" placeholder="search.query, search.fetch" /></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doAddTool()">接入并检测</button>
+    </div>`;
+  $("#overlay").classList.add("show");
+  $("#modal").classList.add("show");
+}
+function doAddTool() {
+  const name = ($("#ntName").value || "").trim() || "mcp-tool";
+  const t = { id: "tool_" + Math.random().toString(16).slice(2,6), name, kind: "mcp_remote", endpoint: $("#ntEndpoint").value || "—", keyRef: $("#ntKeyRef").value || null, caps: ($("#ntCaps").value || "tool.call").split(",").map(s=>s.trim()), status: "unknown" };
+  tools.push(t);
+  if (t.keyRef) { const k = userKeys.find(x=>x.name===t.keyRef); if (k && !k.usedBy.includes(t.id)) k.usedBy.push(t.id); }
+  closeModal();
+  toast(`工具「${name}」已接入，检测中…`);
+  render();
+  setTimeout(()=>testTool(t.id), 400);
+}
+function testTool(id) {
+  const t = tools.find(x=>x.id===id);
+  t.status = "unknown"; render();
+  setTimeout(() => {
+    t.status = Math.random() > 0.2 ? "ok" : "down";
+    if (state.route === "tools") render();
+    toast(`工具 ${t.name} ${t.status === "ok" ? "握手成功，能力清单已同步" : "不可达，请检查 Endpoint 与凭据"}`, t.status === "ok");
+  }, 1100);
+}
+
+/* ================= 视图：Run / Rollout 详情（sandbox 执行情况） ================= */
+function openRun(caseId) {
+  state.runId = caseId; state.runTab = "overview"; state.logLines = LOG_POOL.slice(0, 6).map((l,i)=>({no:i+1,lv:l[0],tx:l[1]}));
+  state.route = "run"; location.hash = "#/run"; render();
+}
+function setRunTab(t) { state.runTab = t; render(); }
+function rejudge(runId) {
+  toast(`已提交重评作业：${runId} · 仅消费已保存的不可变 Submission，生成新 GradingRevision，原评分保留`);
+}
+function viewRun() {
+  const r = mockRun(state.runId || "case_0001");
+  const tabs = [["overview","概览"],["logs","日志"],["trajectory","Trajectory"],["grading","评分明细"],["artifacts","工件"],["usage","用量与效率"]];
+  let body = "";
+  if (state.runTab === "overview") {
+    body = `
+    <div class="panel"><div class="panel-body">
+      <span class="micro-label">ATTEMPT 阶段生命周期 · setup → target → collect → judge → teardown</span>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:stretch">
+        ${runPhases.map((p,i)=>`
+          <div style="flex:1;background:var(--panel-warm);border:1px solid var(--line);border-radius:10px;padding:10px 12px;position:relative">
+            <div style="display:flex;align-items:center;gap:6px"><span class="led ${p.st==="done"?"on":"off"}"></span><span class="mono" style="font-size:10px;letter-spacing:.14em;color:var(--muted)">${p.name.toUpperCase()}</span></div>
+            <div style="font-size:12.5px;margin-top:5px">${p.label}</div>
+            <div class="mono" style="font-size:11px;color:var(--ink-2);margin-top:2px">${p.dur}</div>
+          </div>${i<runPhases.length-1?'<div style="align-self:center;color:var(--muted)">→</div>':""}`).join("")}
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin-top:10px">先停止 Target 写入并持久化不可变 Submission，再独立评分；重评不重新调用 Target。逐阶段 deadline 与错误分类为提案能力。</p>
+    </div></div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">输入 / 输出</span>
+        <p style="margin:8px 0 14px">${esc(r.input)}</p>
+        <div class="raw-block">${esc(r.trajectory.find(t=>t.kind==="response")?.detail || "（运行中，尚无最终输出）")}</div>
+      </div></div>
+      <div class="panel"><div class="panel-body">
+        <span class="micro-label">执行摘要</span>
+        <dl class="kv" style="margin-top:10px">
+          <dt>status</dt><dd>${badge(r.status)}</dd>
+          <dt>attempt</dt><dd class="mono">第 ${r.attempt} 次尝试 · max_retries=${r.maxRetries} · 同一 Idempotency-Key</dd>
+          <dt>sandbox</dt><dd class="mono">${esc(r.sandbox)}</dd>
+          <dt>harness</dt><dd class="mono">finance.command@0.1.0 · sha256:91ab…02dd</dd>
+          <dt>worker</dt><dd class="mono">${r.worker} · 租约心跳正常</dd>
+          <dt>judge</dt><dd class="mono">${esc(r.judge)} → ${r.score}</dd>
+          <dt>工具调用</dt><dd class="mono">${r.usage.toolCalls} 次 · ${Object.entries(r.usage.toolDist).map(([k,v])=>k+"×"+v).join("，")}</dd>
+        </dl>
+      </div></div>
+    </div>`;
+  } else if (state.runTab === "grading") {
+    body = `
+    <div class="panel">
+      <div class="panel-head"><h3>Judge Checks</h3>
+        <span class="micro-label">weighted_mean · 阈值 0.9 · must_pass 失败整题计 0（保留门控前分数）</span>
+        <div class="spacer"></div>
+        <button class="btn sm" onclick="rejudge('${r.id}')">↻ 重评（不重新调用 Target）</button>
+      </div>
+      <table class="grid">
+        <thead><tr><th>Check</th><th>类型</th><th>权重</th><th>必过</th><th>结果</th><th>得分</th><th>依据</th></tr></thead>
+        <tbody>${judgeChecks.map(c=>`
+          <tr>
+            <td class="mono" style="font-weight:600">${c.id}</td>
+            <td><span class="badge ${c.type==="command"?"lock":"queued"}">${c.type}</span></td>
+            <td class="mono">${c.weight}</td>
+            <td>${c.must?'<span class="badge error">must_pass</span>':"—"}</td>
+            <td>${badge(c.outcome)}</td>
+            <td class="mono">${c.score.toFixed(2)}</td>
+            <td style="font-size:12px;color:var(--ink-2)">${esc(c.reason)}<br/><span class="id-cell">证据：${c.evidence}</span></td>
+          </tr>`).join("")}</tbody>
+      </table>
+      <div class="panel-body" style="border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2)">
+        聚合：<span class="mono">(0.8×1.0 + 0.2×0.75) / 1.0 = 0.95 ≥ 0.9</span> → ${badge("pass")} · 评分覆盖率 100%
+        <span style="float:right" class="micro-label">POST /v1/runs/{id}/rejudge · 生成新评分记录，保留原结论</span>
+      </div>
+    </div>`;
+  } else if (state.runTab === "logs") {
+    body = `
+    <div class="panel"><div class="panel-body">
+      <div class="log-console" id="logConsole">
+        ${state.logLines.map(l=>`<div class="ln ${l.lv}"><span class="no">${l.no}</span><span>${esc(l.tx)}</span></div>`).join("")}
+      </div>
+      <div class="log-cursor-bar">
+        <span class="led busy"></span>
+        <span>GET /v1/runs/${r.id}/events?after=<b id="logCursor">${state.logLines.length}</b>&limit=200 · 游标轮询（无 SSE/WebSocket）</span>
+        <span style="margin-left:auto" id="logHasMore">has_more=true</span>
+      </div>
+    </div></div>`;
+  } else if (state.runTab === "trajectory") {
+    const kindColor = { request:"var(--info)", tool:"var(--accent)", reason:"var(--warn)", response:"var(--pass)", judge:"var(--ink)" };
+    body = `
+    <div class="panel"><div class="panel-body">
+      <div class="timeline">
+        ${r.trajectory.map(s=>`
+          <div class="ev ${s.kind==="judge"?"hot":""}">
+            <b>${esc(s.title)}</b><span class="t">${s.t}</span>
+            <div style="color:${kindColor[s.kind]};font-size:12px;margin-top:2px">${esc(s.detail || s.title2 || "")}</div>
+            ${s.tokens ? `<div class="tok-legend" style="margin-top:4px">${Object.entries(s.tokens).map(([k,v])=>`<span><span class="sw" style="background:${{in:"var(--info)",out:"var(--accent)",reasoning:"var(--warn)"}[k]}"></span>${k} <b class="mono">${v}</b></span>`).join("")}</div>` : ""}
+          </div>`).join("")}
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px">reasoning_tokens 只是计量数字；平台不保存、不展示隐藏 CoT 正文。</p>
+    </div></div>`;
+  } else if (state.runTab === "artifacts") {
+    body = `
+    <div class="panel">
+      <div class="panel-head"><h3>工件</h3><span class="micro-label">读取时核对 SHA-256 · ZIP 导出含实际内容</span>
+        <div class="spacer"></div><button class="btn sm ghost" onclick="toast('已请求 run 级 ZIP 导出（rollout.json + records.jsonl + manifest + 工件）')">导出 Run ZIP</button></div>
+      <div class="panel-body">
+        ${r.artifacts.map(a=>`
+          <div class="artifact-row">
+            <span class="badge lock">${a.kind}</span>
+            <div style="flex:1"><div class="fname">${esc(a.name)}</div><div class="fmeta">sha256:${a.sha} · ${a.size}</div></div>
+            <button class="btn sm ghost" onclick="toast('下载 ${a.name}（原型演示）')">下载</button>
+          </div>`).join("")}
+        <p style="font-size:12px;color:var(--muted);margin-top:12px">文件快照有大小限制，不是完整文件系统备份；导出元数据与 ZIP 打包上限 128 MB。</p>
+      </div>
+    </div>`;
+  } else if (state.runTab === "usage") {
+    const u = r.usage;
+    const tot = u.target.in + u.target.out + u.target.cachedIn + u.target.reasoning;
+    const seg = (v,c) => `<i style="width:${(v/tot*100).toFixed(1)}%;background:${c}"></i>`;
+    body = `
+    <div class="panel"><div class="panel-head"><h3>Token 分解 · Target</h3><span class="micro-label">cached / reasoning 不叠加进总量</span></div>
+      <div class="panel-body">
+        <div class="tok-bar">${seg(u.target.in-u.target.cachedIn,"var(--info)")}${seg(u.target.cachedIn,"#B9CBD8")}${seg(u.target.out,"var(--accent)")}${seg(u.target.reasoning,"var(--warn)")}</div>
+        <div class="tok-legend">
+          <span><span class="sw" style="background:var(--info)"></span>input <b class="mono">${(u.target.in-u.target.cachedIn).toLocaleString()}</b></span>
+          <span><span class="sw" style="background:#B9CBD8"></span>cached_input <b class="mono">${u.target.cachedIn.toLocaleString()}</b></span>
+          <span><span class="sw" style="background:var(--accent)"></span>output <b class="mono">${u.target.out.toLocaleString()}</b></span>
+          <span><span class="sw" style="background:var(--warn)"></span>reasoning <b class="mono">${u.target.reasoning.toLocaleString()}</b></span>
+          <span>cache_write <b class="mono">${u.target.cacheWrite}</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-tiles" style="margin-bottom:18px">
+      <div class="stat-tile"><span class="micro-label">Target 调用</span><div class="v">${u.target.calls} <small>次 · 重试 ${u.target.retries}</small></div></div>
+      <div class="stat-tile"><span class="micro-label">Judge tokens</span><div class="v">${(u.judge.in+u.judge.out).toLocaleString()} <small>in ${u.judge.in} / out ${u.judge.out}</small></div></div>
+      <div class="stat-tile"><span class="micro-label">上游费用</span><div class="v">$${u.cost[0].amount.toFixed(4)} <small>${u.cost[0].ccy} · 按币种累计</small></div></div>
+      <div class="stat-tile"><span class="micro-label">耗时</span><div class="v">${u.latency.mean} <small>P50 ${u.latency.p50} · P95 ${u.latency.p95}</small></div></div>
+      <div class="stat-tile"><span class="micro-label">输出量</span><div class="v">${u.outputChars} <small>字符 / ${u.outputBytes} 字节</small></div></div>
+      <div class="stat-tile"><span class="micro-label">日志 / 工件</span><div class="v">${(u.logBytes/1024).toFixed(1)}K <small>+ ${(u.artifactBytes/1024).toFixed(1)}K 工件</small></div></div>
+    </div>
+    <div class="panel"><div class="panel-body">
+      <span class="micro-label">用量告警</span>
+      ${u.warnings.map(w=>`<div class="csrf-note" style="margin-top:8px"><span class="led off" style="margin-top:4px;background:var(--warn)"></span><span>${esc(w)}</span></div>`).join("")}
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">每项计量附 known_samples；不同别名不相加，上游返回的费用按币种分别累计，不自动推算模型价格。TTFT、生成速率、CPU/内存实测尚未实现。</p>
+    </div></div>`;
+  }
+  return shell(`
+    <div class="panel">
+      <div class="panel-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        <div>
+          <div class="micro-label">RUN / ROLLOUT</div>
+          <div style="font-size:17px;font-weight:600" class="mono">${r.id}</div>
+          <div class="id-cell mt8">${r.caseId} · sandbox 隔离执行 · ${r.worker}</div>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+        ${badge(r.status)}
+        <span class="badge ${r.status==="queued"?"running":"pass"}"><span class="led ${r.status==="queued"?"busy":"on"}"></span>${r.status==="queued"?"日志流式写入中":"已完成并核对工件"}</span>
+      </div>
+    </div>
+    <div class="tabs">${tabs.map(([v,l])=>`<button class="tab ${state.runTab===v?"active":""}" onclick="setRunTab('${v}')">${l}</button>`).join("")}</div>
+    ${body}
+  `, "Run 详情", `<button class="btn ghost" onclick="state.detailId=state.detailId||'${experiments[0].id}';go('detail')">← 返回实验</button>`);
+}
+
+/* 日志流模拟：停留在 Run 详情·日志页且实验在跑时按游标追加 */
+setInterval(() => {
+  if (state.route !== "run" || state.runTab !== "logs") return;
+  const exp = experiments.find(e=>e.status==="running");
+  if (!exp || state.logLines.length >= LOG_POOL.length) { const hm = $("#logHasMore"); if (hm) hm.textContent = "has_more=false"; return; }
+  const l = LOG_POOL[state.logLines.length];
+  state.logLines.push({ no: state.logLines.length + 1, lv: l[0], tx: l[1] });
+  const box = $("#logConsole");
+  if (box) {
+    const div = document.createElement("div");
+    div.className = "ln " + l[0];
+    div.innerHTML = `<span class="no">${state.logLines.length}</span><span>${esc(l[1])}</span>`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+  const cur = $("#logCursor"); if (cur) cur.textContent = state.logLines.length;
+}, 1500);
+
+/* ================= 渲染与计时器 ================= */
+function render() {
+  const app = $("#app");
+  const views = { login: viewLogin, overview: viewOverview, experiments: viewExperiments, detail: viewDetail, compare: viewCompare, datasets: viewDatasets, harnesses: viewHarnesses, evaluators: viewEvaluators, connections: viewConnections, tools: viewTools, keys: viewKeys, run: viewRun, traces: viewTraces };
+  app.innerHTML = (views[state.route] || viewOverview)();
+}
+
+/* 会话倒计时 */
+setInterval(() => {
+  if (!state.authed) return;
+  state.sessionLeft = Math.max(0, state.sessionLeft - 1);
+  const clock = $("#sessClock"), bar = $("#sessBar");
+  if (clock) {
+    const h = Math.floor(state.sessionLeft / 3600);
+    const m = String(Math.floor((state.sessionLeft % 3600) / 60)).padStart(2, "0");
+    const s = String(state.sessionLeft % 60).padStart(2, "0");
+    clock.textContent = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+  }
+  if (bar) {
+    bar.style.width = (state.sessionLeft / state.sessionTotal * 100) + "%";
+    bar.classList.toggle("low", state.sessionLeft < 300);
+  }
+  if (state.sessionLeft === 0) {
+    state.authed = false;
+    toast("会话已过期，请重新登录", false);
+    go("login");
+  }
+}, 1000);
+
+/* 运行中实验的轻量进度轮询（模拟） */
+setInterval(() => {
+  const run = experiments.find(e => e.status === "running");
+  if (!run) return;
+  if (run.done < run.total && Math.random() > 0.35) {
+    run.done++;
+    const idx = run.done - 1;
+    if (caseResults[idx] && caseResults[idx].status === "queued") {
+      caseResults[idx].status = CASE_STATUS[(idx * 7) % CASE_STATUS.length];
+      caseResults[idx].score = caseResults[idx].status === "pass" ? (0.7 + Math.random() * 0.25).toFixed(2) : caseResults[idx].status === "fail" ? "0.31" : "—";
+      caseResults[idx].latency = (1 + Math.random() * 3).toFixed(1) + "s";
+    }
+    const bar = $("#runProg"), txt = $("#runProgTxt"), kpi = $("#kpiRate");
+    if (bar) bar.style.width = (run.done / run.total * 100).toFixed(0) + "%";
+    if (txt) txt.textContent = `${run.done}/${run.total}`;
+    if (kpi) kpi.innerHTML = fmtPct(run.done / run.total * 0.78);
+    if (run.done >= run.total) {
+      run.status = "completed"; run.successRate = 0.78; run.execRate = 0.98;
+      toast(`实验 ${run.id} 已完成 · 通过率 78%`);
+      if (["overview","experiments","detail","run"].includes(state.route)) render();
+    }
+  }
+}, 2000);
+
+/* 初始化 */
+(function init() {
+  const r = location.hash.replace(/^#\//, "");
+  if (r && r !== "login") state.route = r;
+  render();
+})();
+</script>
+</body>
+</html>
