@@ -79,8 +79,10 @@ class BenchmarkService:
                 self.runtimes.check(task['environment'])
         parameters = {'target': target_parameters or {}, 'judge': judge_parameters or {}}
         for config in parameters.values():
-            if not isinstance(config, dict) or set(config) - {'temperature', 'max_tokens', 'top_p', 'enable_thinking'}:
+            if not isinstance(config, dict) or set(config) - {'temperature', 'max_tokens', 'top_p', 'enable_thinking', 'reasoning_split'}:
                 raise ValueError('Unsupported generation parameters')
+            if 'reasoning_split' in config and not isinstance(config['reasoning_split'], bool):
+                raise ValueError('reasoning_split must be a boolean')
         encoded(parameters)
         plan = {'schema_version': 1, 'release_id': release_id, 'release_digest': release['digest'],
                 'agent_harness': {'reference': agent_ref, 'digest': agent_row['digest'], 'spec': agent_row['spec']},

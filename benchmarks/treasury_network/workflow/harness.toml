@@ -1,0 +1,8 @@
+schema_version = 1
+[harness]
+id = "benchmark.treasury-network"
+role = "workflow"
+version = "1.0.0"
+protocol = "liteeval.workflow/v1"
+[runtime]
+command = ["{python}", "-B", "{harness}/controller.py"]

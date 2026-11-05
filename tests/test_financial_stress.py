@@ -121,7 +121,7 @@ class FinancialExecutionTest(unittest.IsolatedAsyncioTestCase):
                     requests.append(body)
                     action = {'action': 'read', 'path': 'workflow-fixtures/scenario-1.json'} if len(body['messages']) == 3 else {'action': 'wait'}
                     reply = {'model': 'fixture', 'usage': {'prompt_tokens': 8},
-                             'choices': [{'message': {'content': json.dumps(action)}}]}
+                             'choices': [{'message': {'content': json.dumps(action),'reasoning_content':'fixture reasoning trace'}}]}
                     data = json.dumps(reply).encode()
                     self.send_response(200)
                     self.send_header('Content-Length', str(len(data)))
@@ -135,13 +135,18 @@ class FinancialExecutionTest(unittest.IsolatedAsyncioTestCase):
                 with patch.dict(os.environ, {'LITEEVAL_SECRET_KEY': Fernet.generate_key().decode(), 'NO_PROXY': '127.0.0.1'}):
                     connection = connections.create(store, {'project_id': project, 'name': 'fixture', 'kind': 'openai_compatible',
                         'endpoint': f'http://127.0.0.1:{server.server_port}/v1', 'model': 'fixture', 'api_key': 'local-fixture-only'})
+                    with self.assertRaisesRegex(ValueError,'reasoning_split must be a boolean'):
+                        service.preflight(project,release['id'],agent,target_connection=connection['id'],
+                                          workflow_ref=workflow,trusted_local=True,target_parameters={'reasoning_split':'true'})
                     result = await service.run(project, release['id'], agent, target_connection=connection['id'],
-                                               workflow_ref=workflow, trusted_local=True)
+                                               workflow_ref=workflow, trusted_local=True,target_parameters={'reasoning_split':True})
             finally:
                 await asyncio.to_thread(server.shutdown)
                 server.server_close()
                 thread.join(timeout=1)
             self.assertTrue(requests)
+            self.assertTrue(all(request.get('reasoning_split') is True for request in requests))
+            self.assertTrue(any(m.get('reasoning_content')=='fixture reasoning trace' for request in requests for m in request['messages']))
             self.assertNotIn('repo_rejected', json.dumps(requests))
             self.assertEqual(result['summary']['fail'], 3)
             self.assertGreater(result['usage']['record_count'], 0)
