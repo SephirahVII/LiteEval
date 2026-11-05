@@ -11,7 +11,7 @@ from liteeval.bootstrap import benchmark_service
 from liteeval.infrastructure.persistence.store import Store
 
 
-def summarize(source,output):
+def summarize(source,output,family='network'):
     if not (source/'liteeval.db').exists():
         raise ValueError('Calibration database does not exist')
     output.mkdir(parents=True,exist_ok=True)
@@ -48,6 +48,7 @@ def summarize(source,output):
         integrity_path=path.parent/'integrity.json'
         integrity=json.loads(integrity_path.read_text(encoding='utf-8')) if integrity_path.exists() else {}
         row={'label':report['label'],'level':report['round'],'case_version':version,'phase':report['phase'],'model':report['model'],
+             'family':report.get('family','network'),'scenario':report.get('scenario','stress'),
              'score':task['grading']['score'],'outcome':task['grading']['outcome'],'checks':checks,
              'weights':{c['check_id']:c.get('weight') for c in task['checks']},
              'metrics':next((c['metrics'] for c in task['checks'] if 'metrics' in c),{}),
@@ -65,7 +66,8 @@ def summarize(source,output):
     for r in rows:
         if r['score'] is not None:
             groups[(r['phase'],r['model'],r['release_digest'],r['agent_digest'],r['evaluation_digest'],r['workflow_digest'],json.dumps(r['parameters'],sort_keys=True))].append(r['score']*100)
-    stats=[{'phase':k[0],'model':k[1],'release_digest':k[2],'agent_digest':k[3],
+    versions={r['release_digest']:(r['case_version'],r['scenario']) for r in rows}
+    stats=[{'phase':k[0],'model':k[1],'case_version':versions[k[2]][0],'scenario':versions[k[2]][1],'release_digest':k[2],'agent_digest':k[3],
             'evaluation_digest':k[4],'workflow_digest':k[5],'parameters':json.loads(k[6]),'n':len(v),'mean':statistics.mean(v),'sample_stddev':statistics.stdev(v) if len(v)>1 else None,
             'sample_variance':statistics.variance(v) if len(v)>1 else None,
             'min':min(v),'max':max(v),'scores':v} for k,v in groups.items()]
@@ -77,21 +79,32 @@ def summarize(source,output):
            '第一轮存在 repo 报价歧义；第三轮初次运行遇到 TLS 中断，第一次重跑遇到重试事件协议错误；第四轮初次运行遇到429。原记录全部保留。',
            '第4–5级修正净缓冲和交接存在性评分；第6级发现消极不融资仍可获40分的漏洞；第7级改为联合资金可行性，0.7.1再修正未触发义务的分母与契约口径。旧分数保留，不能据此挑选低分宣称达标。', '',
            '当前0.8.0使用联合资金40、付款25、缓冲15、偿债20，费用单独报告。以下先列同版、同Agent/Workflow/Evaluator摘要及参数的重复结果。', '',
-           '| 模型 | 重复次数 | 原始分数 /100 | 均分 | 样本标准差 |',
-           '| --- | ---: | --- | ---: | ---: |']
+           '| 题版/情景 | 模型 | 重复次数 | 原始分数 /100 | 均分 | 样本标准差 |',
+           '| --- | --- | ---: | --- | ---: | ---: |']
+    if family=='source':
+        lines=['# Source treasury 真实校准记录','',
+               '这是原始证据风险重建题的真实 API 运行记录。当前为校准候选，尚未声明达到30–40分难度目标。',
+               '调用用户已有的 MiniMax API 连接；未使用 Codex 登录。一个场景家族，不代表所有强模型或成熟 Agent 的能力。',
+               '业务时间采用回放，真实调用耗时单独记录；每题最多224次动作、2400秒墙钟上限。',
+               '各次分数采用当时冻结的 rubric；不同题版、参数、Harness或校准/保留阶段分别统计。',
+               '0.1.0为初始原始资料题；0.1.1修正零额CSA省略和现金as-of；0.2.0增加平静与已对冲对照；0.3.0提供计算器并改为整本风险台账共享GBP5m误差预算。历史分数不重写。','',
+               '| 题版/情景 | 模型 | 重复次数 | 原始分数 /100 | 均分 | 样本标准差 |',
+               '| --- | --- | ---: | --- | ---: | ---: |']
     for g in stats:
         if g['phase']=='calibration' and g['n']>1:
             values=', '.join(f'{score:.2f}' for score in g['scores'])
-            lines.append(f"| {g['model']} | {g['n']} | {values} | {g['mean']:.2f} | {g['sample_stddev']:.2f} |")
-    lines+=['','0.8.0校准未达到30–40分目标；保留变体没有用于补挑低分。下一轮原始证据与协议推导设计见 [作者侧草案](../../product/financial-source-risk-case-design.md)。','',
-           '| 运行 | 题版 | 模型 | 分数 /100 | 动作 | API用量记录 | 实际秒数 | 轨迹 |',
-           '| --- | --- | --- | ---: | ---: | ---: | ---: | --- |']
+            lines.append(f"| {g['case_version']}/{g['scenario']} | {g['model']} | {g['n']} | {values} | {g['mean']:.2f} | {g['sample_stddev']:.2f} |")
+    lines+=['',('相同压力题包的重复试验、保留金额变体和对照分别报告；对照不能用来补挑低分。详细分析见 [设计与分析](../../product/financial-source-risk-case-design.md)。' if family=='source' else
+                 '0.8.0校准未达到30–40分目标；保留变体没有用于补挑低分。下一轮原始证据与协议推导设计见 [作者侧草案](../../product/financial-source-risk-case-design.md)。'),'',
+           '| 运行 | 题版 | 阶段/情景 | 模型 | 分数 /100 | 动作 | API用量记录 | 实际秒数 | 轨迹 |',
+           '| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |']
     for r in rows:
         score='未评分' if r['score'] is None else f"{r['score']*100:.2f}"
         trace=f"[账本]({r['trace']})" if r['trace'] else '无完整产物'
-        lines.append(f"| {r['label']} | {r['case_version']} | {r['model']} | {score} | {r['actions']} | {r['usage']['record_count']} | {r['wall_seconds']:.2f} | {trace} |")
-    lines+=['','动作数包含被拒的工具请求；API用量记录还可能包含未完成请求和传输重试。原始第五轮触及8MB进程输出上限，修复为工作区会话历史加摘要句柄后使用同一题包补跑。',
-            '完整请求/响应、模型返回的 reasoning、工具回执、发布快照及其摘要在本地 `data/treasury-calibration/<运行>/execution.zip`。本目录仅发布合成业务账本和脱敏统计。',
+        lines.append(f"| {r['label']} | {r['case_version']} | {r['phase']}/{r['scenario']} | {r['model']} | {score} | {r['actions']} | {r['usage']['record_count']} | {r['wall_seconds']:.2f} | {trace} |")
+    evidence_folder='source-treasury-calibration' if family=='source' else 'treasury-calibration'
+    lines+=['','动作数包含被拒的工具请求；API用量记录还可能包含未完成请求和传输重试。',
+            f'完整请求/响应、模型返回的 reasoning、工具回执、发布快照及其摘要在本地 `data/{evidence_folder}/<运行>/execution.zip`。本目录仅发布合成业务账本和脱敏统计。',
             'input_tokens 包含缓存命中部分；output_tokens 包含供应商报告的 reasoning 部分。两者不能再次相加计算总量。供应商未报告 API 费用时保持未知；账本里的 GBP fee 是仿真融资成本。',
             '所有级别均由作者侧参考路径验证100分。当前均为一个场景家族；只有最终同题包、同Harness摘要、同参数的重复及未参与改题的情景验证，才能支持30–40分难度声明。','']
     (output/'README.md').write_text('\n'.join(lines),encoding='utf-8')
@@ -103,5 +116,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--input',type=Path,default=Path('data/treasury-calibration'))
     p.add_argument('--output',type=Path,default=Path('docs/examples/treasury-network'))
+    p.add_argument('--family',choices=('network','source'),default='network')
     a=p.parse_args()
-    summarize(a.input,a.output)
+    summarize(a.input,a.output,a.family)

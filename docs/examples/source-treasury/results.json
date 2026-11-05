@@ -1,0 +1,1101 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "label": "source-01-flash",
+      "level": 9,
+      "case_version": "0.1.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.4129,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 0.22,
+        "joint_funding": 0.214,
+        "payments": 1.0,
+        "buffer": 0.214,
+        "debt_close": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "debt_close": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": true,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          107000000,
+          107000000
+        ],
+        "fees_minor": 4443100,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 2475000000,
+        "debt_repaid_minor": 2475000000,
+        "closing_balances_minor": {
+          "P-GBP": 2032000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 21,
+        "peak_financing_minor": 2475000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": 107000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 0.22,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1245,
+          "forecast_by_csa": {
+            "RHO": 890000000,
+            "SIGMA": 150000000,
+            "TAU": 120000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1200,
+          "sources": [
+            "positions/trade_register.csv",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "agreements/CSA-pack.md",
+            "inbox/MB-025.csv",
+            "bank/opening.csv",
+            "bank/restrictions.csv",
+            "risk/forecast-open.json"
+          ]
+        },
+        "risk_report_count": 7
+      },
+      "error": null,
+      "execution_id": "13a3f3fbc0754b998ea7e01424900532",
+      "release_digest": "3ea35479d7a3ab1023419c3b50e5fe4ab61607ffb7782a3c4eb435f76d012f8b",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "a15e1c0495c0099c15f601a9052a999a30fbe303e943b51ce80fcf3cd9a1f97c",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 174,
+      "usage": {
+        "record_count": 176,
+        "totals": {
+          "input_tokens": 6734017,
+          "output_tokens": 26920,
+          "total_tokens": 6760937,
+          "cached_input_tokens": 6657741,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 22864
+        },
+        "known_samples": {
+          "input_tokens": 174,
+          "output_tokens": 174,
+          "total_tokens": 174,
+          "cached_input_tokens": 174,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 174
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 563.094,
+      "action_budget": 224,
+      "raw_responses": 174,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "480196048cd5ac6862a558a629adeb74d5344414fd36b1d597a872564f98a114",
+        "raw_model_responses": 174,
+        "provider_models": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-01-flash.json"
+    },
+    {
+      "label": "source-01-m3",
+      "level": 9,
+      "case_version": "0.1.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.5831200000000001,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 0.7208000000000001,
+        "joint_funding": 0.128,
+        "payments": 1.0,
+        "buffer": 0.128,
+        "debt_close": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "debt_close": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": true,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          64000000,
+          64000000
+        ],
+        "fees_minor": 1943200,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 2040000000,
+        "debt_repaid_minor": 2040000000,
+        "closing_balances_minor": {
+          "P-GBP": 2424000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 12,
+        "peak_financing_minor": 2040000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": 64000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 0.7208000000000001,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1305,
+          "forecast_by_csa": {
+            "OMEGA": 0,
+            "RHO": 1412000000,
+            "SIGMA": 600000000,
+            "TAU": 1002000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1275,
+          "sources": [
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "positions/trade_register.csv",
+            "inbox/MB-025.csv",
+            "bank/restrictions.csv",
+            "bank/record-semantics.md"
+          ]
+        },
+        "risk_report_count": 9
+      },
+      "error": null,
+      "execution_id": "e7c6cfbbbd37405e82a410a157d62f9c",
+      "release_digest": "3ea35479d7a3ab1023419c3b50e5fe4ab61607ffb7782a3c4eb435f76d012f8b",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "a15e1c0495c0099c15f601a9052a999a30fbe303e943b51ce80fcf3cd9a1f97c",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 145,
+      "usage": {
+        "record_count": 147,
+        "totals": {
+          "input_tokens": 4901326,
+          "output_tokens": 26414,
+          "total_tokens": 4927740,
+          "cached_input_tokens": 4838174,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 23150
+        },
+        "known_samples": {
+          "input_tokens": 145,
+          "output_tokens": 145,
+          "total_tokens": 145,
+          "cached_input_tokens": 145,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 145
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 805.047,
+      "action_budget": 224,
+      "raw_responses": 145,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "5bded1005686407cbfeb5cb108ce3dc2769a0420797ad955018a812c3d8a988a",
+        "raw_model_responses": 145,
+        "provider_models": [
+          "MiniMax-M3"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-01-m3.json"
+    },
+    {
+      "label": "source-011-flash-1",
+      "level": 9,
+      "case_version": "0.1.1",
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.48948,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 0.5,
+        "joint_funding": 0.1128,
+        "payments": 1.0,
+        "buffer": 0.1128,
+        "debt_close": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "debt_close": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": true,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          56400000,
+          56400000
+        ],
+        "fees_minor": 1937120,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 2040000000,
+        "debt_repaid_minor": 2040000000,
+        "closing_balances_minor": {
+          "P-GBP": 2416400000,
+          "P-USD": 10000000,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 16,
+        "peak_financing_minor": 2040000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": 56400000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 0.5,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 3105,
+          "forecast_by_csa": {
+            "OMEGA": 0,
+            "RHO": 2600000000,
+            "SIGMA": 600000000,
+            "TAU": 1200000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 3075,
+          "sources": [
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "positions/trade_register.csv",
+            "inbox/MB-025.csv",
+            "bank/opening.csv",
+            "bank/restrictions.csv",
+            "collateral/revaluation-0905.json",
+            "desk/mandate.md",
+            "desk/limits.md"
+          ]
+        },
+        "risk_report_count": 6
+      },
+      "error": null,
+      "execution_id": "b4f3b223c6024310ae0ab3d2b82475d6",
+      "release_digest": "7ee88f0774b1439422e26a9221d40e5b46552d26e0d622379b391dd1b64e5741",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "f33a6c3713b8da1711a489a6e8b7fa01679279b528a4d0c41d1f601f3690c245",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 138,
+      "usage": {
+        "record_count": 138,
+        "totals": {
+          "input_tokens": 7904743,
+          "output_tokens": 89820,
+          "total_tokens": 7994563,
+          "cached_input_tokens": 7862016,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 83776
+        },
+        "known_samples": {
+          "input_tokens": 138,
+          "output_tokens": 138,
+          "total_tokens": 138,
+          "cached_input_tokens": 138,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 95
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 790.531,
+      "action_budget": 224,
+      "raw_responses": 138,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "4ede32db4a92aaa563bcc11bd99c10b561a4e9df7f16772845211f70af9cb876",
+        "raw_model_responses": 138,
+        "provider_models": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-011-flash-1.json"
+    },
+    {
+      "label": "source-02-flash-1",
+      "level": 9,
+      "case_version": "0.2.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.5989599999999999,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 0.7604,
+        "joint_funding": 0.128,
+        "payments": 1.0,
+        "buffer": 0.128,
+        "funding_control": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "funding_control": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": true,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          64000000,
+          64000000
+        ],
+        "fees_minor": 1943200,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 2040000000,
+        "debt_repaid_minor": 2040000000,
+        "closing_balances_minor": {
+          "P-GBP": 2424000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 7,
+        "peak_financing_minor": 2040000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": 64000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 0.7604,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1245,
+          "forecast_by_csa": {
+            "OMEGA": 0,
+            "RHO": 1907000000,
+            "SIGMA": 501000000,
+            "TAU": 1200000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1215,
+          "sources": [
+            "inbox/MB-025.csv",
+            "positions/trade_register.csv",
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "bank/opening.csv",
+            "bank/restrictions.csv"
+          ]
+        },
+        "risk_report_count": 8,
+        "prefunding_credit_minor": 3364000000,
+        "funding_control_score": 1.0,
+        "invalid_source_paths": []
+      },
+      "error": null,
+      "execution_id": "759be90c358e4d549bfa8af0a8ceba12",
+      "release_digest": "4fcbc77e0825ccb379acbe7118544266fe4bb6031c1cb29b48f653a9f9b38b2d",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "0d5cd9103d50954cfeaef13105d142cd8a1607c2c06c5d81ece75684846e1640",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 126,
+      "usage": {
+        "record_count": 127,
+        "totals": {
+          "input_tokens": 3815407,
+          "output_tokens": 20960,
+          "total_tokens": 3836367,
+          "cached_input_tokens": 3759565,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 17885
+        },
+        "known_samples": {
+          "input_tokens": 126,
+          "output_tokens": 126,
+          "total_tokens": 126,
+          "cached_input_tokens": 126,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 126
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 476.453,
+      "action_budget": 224,
+      "raw_responses": 126,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "49205785d56a8e9d751708bcd61228eb8b495e697c22cff8295bbb2085620a03",
+        "raw_model_responses": 126,
+        "provider_models": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-02-flash-1.json"
+    },
+    {
+      "label": "source-02-m3-1",
+      "level": 9,
+      "case_version": "0.2.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.38049999999999995,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 0.42000000000000004,
+        "joint_funding": 0,
+        "payments": 0.75,
+        "buffer": 0.0,
+        "funding_control": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "funding_control": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": false,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          -1616000000,
+          -1616000000
+        ],
+        "fees_minor": 1103200,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 360000000,
+        "debt_repaid_minor": 360000000,
+        "closing_balances_minor": {
+          "P-GBP": 6824000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 10,
+        "peak_financing_minor": 360000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": -1616000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 0.42000000000000004,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1260,
+          "forecast_by_csa": {
+            "OMEGA": 0,
+            "RHO": 890000000,
+            "SIGMA": 150000000,
+            "TAU": 120000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1230,
+          "sources": [
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "positions/trade_register.csv",
+            "inbox/MB-025.csv",
+            "bank/opening.csv",
+            "bank/restrictions.csv"
+          ]
+        },
+        "risk_report_count": 4,
+        "prefunding_credit_minor": 1684000000,
+        "funding_control_score": 1.0,
+        "invalid_source_paths": [
+          "inbox/MB-025.json"
+        ]
+      },
+      "error": null,
+      "execution_id": "dd8ad361ea374b2fbfbed5002d1f20e3",
+      "release_digest": "4fcbc77e0825ccb379acbe7118544266fe4bb6031c1cb29b48f653a9f9b38b2d",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "0d5cd9103d50954cfeaef13105d142cd8a1607c2c06c5d81ece75684846e1640",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 117,
+      "usage": {
+        "record_count": 119,
+        "totals": {
+          "input_tokens": 3479126,
+          "output_tokens": 18278,
+          "total_tokens": 3497404,
+          "cached_input_tokens": 3428706,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 15717
+        },
+        "known_samples": {
+          "input_tokens": 117,
+          "output_tokens": 117,
+          "total_tokens": 117,
+          "cached_input_tokens": 117,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 117
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 498.609,
+      "action_budget": 224,
+      "raw_responses": 117,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "3a8d03937cf26cb0e1b50dbadacc49c15a1562e6d6637b116c575d218d402ece",
+        "raw_model_responses": 117,
+        "provider_models": [
+          "MiniMax-M3"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-02-m3-1.json"
+    },
+    {
+      "label": "source-03-flash-1",
+      "level": 9,
+      "case_version": "0.3.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "family": "source",
+      "scenario": "stress",
+      "score": 0.6,
+      "outcome": "fail",
+      "checks": {
+        "risk_reconstruction": 1.0,
+        "joint_funding": 0,
+        "payments": 0.6666666666666666,
+        "buffer": 0.0,
+        "funding_control": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "funding_control": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": false,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          -476000000,
+          -476000000
+        ],
+        "fees_minor": 3923200,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 1200000000,
+        "debt_repaid_minor": 1200000000,
+        "closing_balances_minor": {
+          "P-GBP": 6824000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 9,
+        "peak_financing_minor": 1200000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": -476000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 1.0,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1245,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "SIGMA": 600000000,
+            "TAU": 1200000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1215,
+          "sources": [
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "positions/trade_register.csv",
+            "inbox/MB-025.csv",
+            "risk/forecast-open.json"
+          ]
+        },
+        "risk_report_count": 4,
+        "prefunding_credit_minor": 2524000000,
+        "funding_control_score": 1.0,
+        "invalid_source_paths": []
+      },
+      "error": null,
+      "execution_id": "2590fa88f2cf404bae6e947066fd801f",
+      "release_digest": "ea2057396b45d0c2fb2681de75b55851b1573b5b4b36c21ef284373a7bdc58f8",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "d7f79152287639917914ac29d4c1b7c90520939a2e3c5f718f793513aeea544e",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 123,
+      "usage": {
+        "record_count": 125,
+        "totals": {
+          "input_tokens": 3392051,
+          "output_tokens": 16875,
+          "total_tokens": 3408926,
+          "cached_input_tokens": 3343338,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 14363
+        },
+        "known_samples": {
+          "input_tokens": 123,
+          "output_tokens": 123,
+          "total_tokens": 123,
+          "cached_input_tokens": 123,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 123
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 382.938,
+      "action_budget": 224,
+      "raw_responses": 123,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "47e57dacbc6cbd4f360f1a7cd248579251e80d0a1aba94fec589bfdbf8bde9ab",
+        "raw_model_responses": 123,
+        "provider_models": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-03-flash-1.json"
+    },
+    {
+      "label": "source-03-m3-1",
+      "level": 9,
+      "case_version": "0.3.0",
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "family": "source",
+      "scenario": "stress",
+      "score": 1.0,
+      "outcome": "pass",
+      "checks": {
+        "risk_reconstruction": 1.0,
+        "joint_funding": 1.0,
+        "payments": 1.0,
+        "buffer": 1.0,
+        "funding_control": 1.0
+      },
+      "weights": {
+        "risk_reconstruction": 40,
+        "joint_funding": 30,
+        "payments": 15,
+        "buffer": 5,
+        "funding_control": 10
+      },
+      "metrics": {
+        "paid": {
+          "U1": true,
+          "M1": true,
+          "C1": true,
+          "M2": true
+        },
+        "GBP_buffers_minor": [
+          500000000,
+          500000000
+        ],
+        "fees_minor": 3033200,
+        "reference_fee_minor": 3093200,
+        "debt_principal_minor": 2476000000,
+        "debt_repaid_minor": 2476000000,
+        "closing_balances_minor": {
+          "P-GBP": 2424000000,
+          "P-USD": 0,
+          "Q-GBP": 1500000000
+        },
+        "rejected_actions": 5,
+        "peak_financing_minor": 2476000000,
+        "financing_limit_minor": 2500000000,
+        "projected_first_buffer_minor": 500000000,
+        "planned_usd_coverage": 1,
+        "level": 9,
+        "risk_reconstruction_score": 1.0,
+        "risk_expected": {
+          "available_cash_minor": 1400000000,
+          "forecast_by_csa": {
+            "RHO": 2600000000,
+            "TAU": 1200000000,
+            "SIGMA": 600000000,
+            "OMEGA": 0
+          },
+          "total_minor": 4400000000
+        },
+        "best_risk_report": {
+          "at_s": 1245,
+          "forecast_by_csa": {
+            "OMEGA": 0,
+            "RHO": 2600000000,
+            "SIGMA": 600000000,
+            "TAU": 1200000000
+          },
+          "available_cash_minor": 1400000000,
+          "as_of_s": 1215,
+          "sources": [
+            "agreements/CSA-pack.md",
+            "agreements/csa_terms.csv",
+            "agreements/margin_collateral.csv",
+            "positions/trade_register.csv",
+            "inbox/MB-025.csv",
+            "bank/opening.csv",
+            "bank/restrictions.csv"
+          ]
+        },
+        "risk_report_count": 10,
+        "prefunding_credit_minor": 3800000000,
+        "funding_control_score": 1.0,
+        "invalid_source_paths": [
+          "inbox/MB-025.json"
+        ]
+      },
+      "error": null,
+      "execution_id": "7484590187c148169e3b7d650a2f4a17",
+      "release_digest": "ea2057396b45d0c2fb2681de75b55851b1573b5b4b36c21ef284373a7bdc58f8",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "agent_version": "1.3.0",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "d7f79152287639917914ac29d4c1b7c90520939a2e3c5f718f793513aeea544e",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "actions": 139,
+      "usage": {
+        "record_count": 141,
+        "totals": {
+          "input_tokens": 4227816,
+          "output_tokens": 21052,
+          "total_tokens": 4248868,
+          "cached_input_tokens": 4170602,
+          "cache_write_tokens": null,
+          "reasoning_tokens": 16820
+        },
+        "known_samples": {
+          "input_tokens": 139,
+          "output_tokens": 139,
+          "total_tokens": 139,
+          "cached_input_tokens": 139,
+          "cache_write_tokens": 0,
+          "reasoning_tokens": 139
+        },
+        "cost_by_currency": {},
+        "warnings": {}
+      },
+      "wall_seconds": 393.687,
+      "action_budget": 224,
+      "raw_responses": 139,
+      "package_unchanged": true,
+      "integrity": {
+        "archive_sha256": "1f85d8e5b4da05d1669c24dd4474f1a4d9289e9055a1595b9e1c198820f297b5",
+        "raw_model_responses": 139,
+        "provider_models": [
+          "MiniMax-M3"
+        ],
+        "credential_leaks": 0,
+        "frozen_package_unchanged": true
+      },
+      "trace": "traces/source-03-m3-1.json"
+    }
+  ],
+  "fixed_protocol_groups": [
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "case_version": "0.1.0",
+      "scenario": "stress",
+      "release_digest": "3ea35479d7a3ab1023419c3b50e5fe4ab61607ffb7782a3c4eb435f76d012f8b",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "a15e1c0495c0099c15f601a9052a999a30fbe303e943b51ce80fcf3cd9a1f97c",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 41.29,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 41.29,
+      "max": 41.29,
+      "scores": [
+        41.29
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "case_version": "0.1.0",
+      "scenario": "stress",
+      "release_digest": "3ea35479d7a3ab1023419c3b50e5fe4ab61607ffb7782a3c4eb435f76d012f8b",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "a15e1c0495c0099c15f601a9052a999a30fbe303e943b51ce80fcf3cd9a1f97c",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 58.31200000000001,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 58.31200000000001,
+      "max": 58.31200000000001,
+      "scores": [
+        58.31200000000001
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "case_version": "0.1.1",
+      "scenario": "stress",
+      "release_digest": "7ee88f0774b1439422e26a9221d40e5b46552d26e0d622379b391dd1b64e5741",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "f33a6c3713b8da1711a489a6e8b7fa01679279b528a4d0c41d1f601f3690c245",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 48.948,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 48.948,
+      "max": 48.948,
+      "scores": [
+        48.948
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "case_version": "0.2.0",
+      "scenario": "stress",
+      "release_digest": "4fcbc77e0825ccb379acbe7118544266fe4bb6031c1cb29b48f653a9f9b38b2d",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "0d5cd9103d50954cfeaef13105d142cd8a1607c2c06c5d81ece75684846e1640",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 59.895999999999994,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 59.895999999999994,
+      "max": 59.895999999999994,
+      "scores": [
+        59.895999999999994
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "case_version": "0.2.0",
+      "scenario": "stress",
+      "release_digest": "4fcbc77e0825ccb379acbe7118544266fe4bb6031c1cb29b48f653a9f9b38b2d",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "0d5cd9103d50954cfeaef13105d142cd8a1607c2c06c5d81ece75684846e1640",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 38.05,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 38.05,
+      "max": 38.05,
+      "scores": [
+        38.05
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3.1-Flash",
+      "case_version": "0.3.0",
+      "scenario": "stress",
+      "release_digest": "ea2057396b45d0c2fb2681de75b55851b1573b5b4b36c21ef284373a7bdc58f8",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "d7f79152287639917914ac29d4c1b7c90520939a2e3c5f718f793513aeea544e",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 60.0,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 60.0,
+      "max": 60.0,
+      "scores": [
+        60.0
+      ]
+    },
+    {
+      "phase": "calibration",
+      "model": "MiniMax-M3",
+      "case_version": "0.3.0",
+      "scenario": "stress",
+      "release_digest": "ea2057396b45d0c2fb2681de75b55851b1573b5b4b36c21ef284373a7bdc58f8",
+      "agent_digest": "8ced586bed0f5b1c743bed186c44087b4d230b9425d9da6ff0bd0a7536e04511",
+      "evaluation_digest": "b37750c148861506e48b119deba781cac37c71f4ae4bd949e1878fb524957db3",
+      "workflow_digest": "d7f79152287639917914ac29d4c1b7c90520939a2e3c5f718f793513aeea544e",
+      "parameters": {
+        "max_tokens": 8192,
+        "reasoning_split": true
+      },
+      "n": 1,
+      "mean": 100.0,
+      "sample_stddev": null,
+      "sample_variance": null,
+      "min": 100.0,
+      "max": 100.0,
+      "scores": [
+        100.0
+      ]
+    }
+  ]
+}

@@ -58,11 +58,11 @@ def display(value):
     return result
 
 
-def main():
+def main(factory=None,instructions=TOOLS):
     setup=json.loads(sys.stdin.readline())
     files={name:Path(name).read_text(encoding='utf-8') for name in setup['task']['input_files']}
     fixture=setup['fixture']
-    desk=Treasury(fixture)
+    desk=factory(fixture,files) if factory else Treasury(fixture)
     budget=224 if fixture['level']>=6 else 160
     state, previous, cursor = None, None, 0
     actions=0
@@ -77,7 +77,7 @@ def main():
                 messages.append(json.dumps({'tool_result':previous},ensure_ascii=False))
             messages.append(json.dumps(display({'business_time_s':desk.now,'actions_remaining':budget-actions,'events':desk.events[cursor:]}),ensure_ascii=False))
             cursor=len(desk.events)
-            send('agent',{'instructions':TOOLS,'messages':messages,'state':state,'observation':{'business_time_s':desk.now}})
+            send('agent',{'instructions':instructions,'messages':messages,'state':state,'observation':{'business_time_s':desk.now}})
             reply=json.loads(sys.stdin.readline())
             state=reply.get('state')
             action=reply['output']
