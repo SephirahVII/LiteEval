@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-06",
+  "candidate_version": "0.3.0",
+  "all_historical_runs": 17,
+  "fixed_cohort_runs": 12,
+  "calibration_stress_runs": 6,
+  "control_runs": 4,
+  "retained_runs": 2,
+  "raw_responses_all_versions": 2179,
+  "raw_responses_current_cohort": 1479,
+  "same_version_offline_rejudges": 12,
+  "rejudge_scores_unchanged": true,
+  "model_calls_during_rejudge": 0,
+  "frozen_packages_unchanged": true,
+  "credential_leaks": 0,
+  "bundle": "data/source-treasury-calibration/source-treasury-calibration-evidence.zip",
+  "bundle_sha256": "a87d1a27d5a76e0598f5c61732c7b047edb11071866104f269f24ca5a827622d",
+  "bundle_bytes": 48729826,
+  "protocol_sha256": "4ba704ac9c20a61ee3bfd67aae7c03f431da4226cd4b223eb7d7794a12dd19df",
+  "difficulty_target_met": false
+}

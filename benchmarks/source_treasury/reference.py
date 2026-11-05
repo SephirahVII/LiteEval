@@ -12,8 +12,9 @@ def execute(files,fixture):
         desk.record('action',action=action,result={'ok':True,'value':result})
         return result
     amount=(56 if retained else 46)*M//10
-    expected=reconstruct(files)
     if fixture.get('scenario','stress')!='stress':
+        desk.advance(1200)
+        expected=reconstruct(files)
         at(1740,action='risk_report',forecast_by_csa=expected['forecast_by_csa'],available_cash_minor=expected['available_cash_minor'],as_of_s=1200,
            sources=['positions/trade_register.csv','agreements/CSA-pack.md','inbox/MB-025.csv','bank/restrictions.csv'])
         at(3630,action='submit',route='payment',amount=expected['total_minor'],key='m1',obligation_id='M1',version=1,account='P-GBP',ssi_version='SSI2')
@@ -23,7 +24,10 @@ def execute(files,fixture):
         at(10000,action='handover',text='All obligations have been discharged without repo or standby borrowing. Restrictions remain in place. Treasury riskbook contains per-agreement VM and source references. Treasury is the incoming duty owner.')
         desk.advance(10800)
         return desk.export()
-    approval=at(60,action='approval',route='line',amount=amount)
+    # Approval is nonbinding and free. Do not size it using the future market move.
+    approval=at(60,action='approval',route='line',amount=12*M)
+    desk.advance(1200)
+    expected=reconstruct(files)
     at(1740,action='risk_report',forecast_by_csa=expected['forecast_by_csa'],available_cash_minor=expected['available_cash_minor'],
        as_of_s=1200,sources=['positions/trade_register.csv','agreements/CSA-pack.md','agreements/margin_collateral.csv','inbox/MB-025.csv','bank/restrictions.csv'])
     repo=at(2160,action='quote',route='repo')

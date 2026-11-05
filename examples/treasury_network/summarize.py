@@ -87,7 +87,8 @@ def summarize(source,output,family='network'):
                '调用用户已有的 MiniMax API 连接；未使用 Codex 登录。一个场景家族，不代表所有强模型或成熟 Agent 的能力。',
                '业务时间采用回放，真实调用耗时单独记录；每题最多224次动作、2400秒墙钟上限。',
                '各次分数采用当时冻结的 rubric；不同题版、参数、Harness或校准/保留阶段分别统计。',
-               '0.1.0为初始原始资料题；0.1.1修正零额CSA省略和现金as-of；0.2.0增加平静与已对冲对照；0.3.0提供计算器并改为整本风险台账共享GBP5m误差预算。历史分数不重写。','',
+               '0.1.0为初始原始资料题；0.1.1修正零额CSA省略和现金as-of；0.2.0增加平静与已对冲对照；0.3.0提供计算器并改为整本风险台账共享GBP5m误差预算。历史分数不重写。',
+               '业务错误、台账记录错误及已识别的评分/元数据局限见 [轨迹分析](ANALYSIS.md)。','',
                '| 题版/情景 | 模型 | 重复次数 | 原始分数 /100 | 均分 | 样本标准差 |',
                '| --- | --- | ---: | --- | ---: | ---: |']
     for g in stats:
@@ -107,6 +108,8 @@ def summarize(source,output,family='network'):
             f'完整请求/响应、模型返回的 reasoning、工具回执、发布快照及其摘要在本地 `data/{evidence_folder}/<运行>/execution.zip`。本目录仅发布合成业务账本和脱敏统计。',
             'input_tokens 包含缓存命中部分；output_tokens 包含供应商报告的 reasoning 部分。两者不能再次相加计算总量。供应商未报告 API 费用时保持未知；账本里的 GBP fee 是仿真融资成本。',
             '所有级别均由作者侧参考路径验证100分。当前均为一个场景家族；只有最终同题包、同Harness摘要、同参数的重复及未参与改题的情景验证，才能支持30–40分难度声明。','']
+    if family=='source' and (output/'audit.json').exists():
+        lines+=['完整性、同版离线重判及证据包摘要见 [核验记录](audit.json)。','']
     (output/'README.md').write_text('\n'.join(lines),encoding='utf-8')
     print(json.dumps({'runs':len(rows),'graded':sum(r['score'] is not None for r in rows),'output':str(output.resolve()),
                       'repeated_groups':[{'model':g['model'],'phase':g['phase'],'n':g['n'],'mean':g['mean'],'sample_stddev':g['sample_stddev']} for g in stats if g['n']>1]},ensure_ascii=True))
