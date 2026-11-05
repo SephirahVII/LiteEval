@@ -6,7 +6,9 @@ npm run dev
 npm test
 ```
 
-默认监听 http://127.0.0.1:7100，零 npm 依赖。页面数据、登录、导入、任务执行、导出及进度均为内存 Mock，刷新后重置，尚未接通后端。不要在演示表单中输入真实凭据。
+默认监听 http://127.0.0.1:7100，零 npm 依赖。控制台主页面的登录、导入、运行和导出是内存演示。真实凭据只在本机资源页录入。
+
+`/resources.html` 是独立的真实资源入口。登录本机 Owner 后可以管理项目和模型连接，包括保存、更换、清除供应商 Key，以及归档、恢复。启动 API 时配置浏览器 Origin 和加密主密钥。[本机操作](../docs/connections-and-rollouts.md#本机-owner-资源管理)
 
 `/trajectory.html` 是独立的真实轨迹入口。它通过本机 API 读取已有 Native Execution 的增量事件，使用 LiteEval 项目 Key 或已有 Owner 会话。运行步骤见 [多轮 Benchmark](../docs/dialogue-benchmarks.md#实时轨迹与评分)。
 

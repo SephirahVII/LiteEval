@@ -1,6 +1,6 @@
 # API 与配置
 
-当前软件版本 0.4.2，数据库 schema 6。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。公开金融题库与真实执行结果见 [FAB v2 报告](fab-qianwen-trial.md)，两种示例入口见 [Benchmark 索引](../benchmarks/README.md)。导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方保留 Dataset 服务接口说明。
+当前软件版本 0.4.2，数据库 schema 6。模型连接、凭据加密、Rollout 统计与导出的完整请求示例见 [操作指南](connections-and-rollouts.md)。外部题库及专用适配器按 [Benchmark 交付说明](benchmark-distribution.md) 管理。导入、修订、版本、预检和 Worker 接口见 [前端后端接口约定](frontend-backend-contract.md)。下方保留 Dataset 服务接口说明。
 
 ## 0.3.0 新增接口
 

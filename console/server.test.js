@@ -40,11 +40,14 @@ test('serves files; rejects sibling traversal and malformed URLs without crashin
   }
 });
 
-test('proxies only Native event pages and passes the project credential to the loopback API', async () => {
+test('proxies Native events and Owner resource routes to the loopback API', async () => {
   const received = [];
-  const upstream = http.createServer((req, res) => {
-    received.push([req.url, req.headers.authorization]);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+  const upstream = http.createServer(async (req, res) => {
+    let body = '';
+    for await (const chunk of req) body += chunk;
+    const { authorization, cookie, origin, 'x-csrf-token': csrf } = req.headers;
+    received.push({ path: req.url, method: req.method, authorization, cookie, origin, csrf, body });
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': 'owner=test; HttpOnly' });
     res.end('{"events":[],"next_after":12}');
   });
   await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
@@ -57,8 +60,19 @@ test('proxies only Native event pages and passes the project credential to the l
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('cache-control'), 'no-store');
     assert.equal((await response.json()).next_after, 12);
-    assert.equal((await fetch(origin + '/v1/auth/me')).status, 404);
-    assert.deepEqual(received, [[route, 'Bearer test-project-key']]);
+    const resource = '/v1/model-connections/' + 'b'.repeat(32);
+    const body = JSON.stringify({ api_key: 'fixture' });
+    const patched = await fetch(origin + resource, { method: 'PATCH',
+      headers: { Cookie: 'owner=test', Origin: origin, 'X-CSRF-Token': 'fixture-csrf',
+        'Content-Type': 'application/json' }, body });
+    assert.equal(patched.status, 200);
+    assert.equal(patched.headers.get('set-cookie'), 'owner=test; HttpOnly');
+    assert.equal((await fetch(origin + '/v1/experiments')).status, 404);
+    assert.equal(received.length, 2);
+    assert.equal(received[0].path, route);
+    assert.equal(received[0].authorization, 'Bearer test-project-key');
+    assert.deepEqual(received[1], { path: resource, method: 'PATCH', authorization: undefined,
+      cookie: 'owner=test', origin, csrf: 'fixture-csrf', body });
   } finally {
     await new Promise(resolve => consoleServer.close(resolve));
     await new Promise(resolve => upstream.close(resolve));

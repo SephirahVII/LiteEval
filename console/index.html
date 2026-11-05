@@ -457,7 +457,7 @@ const projects = [
 /* ---------- Mock：评测集发布版本（GET /v1/benchmark-releases —— HTTP 可接） ---------- */
 const releases = [
   { id: "rel_9c2d", bid: "agent-sandbox", name: "Agent Sandbox Coding Tasks", version: "1.0.0", project: "proj_support",
-    tasks: 3, published: "2026-11-02 10:18", source: "本地目录 benchmarks/agent_sandbox/", digest: "sha256:c764…5955",
+    tasks: 3, published: "2026-11-02 10:18", source: "外部题包 · agent_sandbox", digest: "sha256:c764…5955",
     env: "docker · localhost:5000/liteeval/agent-sandbox@c76492… · network bridge · 2 CPU / 2g",
     scoring: "command checks · weighted_mean · must_pass 失败整题计 0",
     status: "published", note: "镜像 digest 已固定；目标执行机需可获取该镜像" },
@@ -522,7 +522,7 @@ const harnesses = [
     envRequired: [{ name: "DEEPSEEK_API_KEY", ready: true }],
     envOptional: [{ name: "DEEPSEEK_BASE_URL", ready: false }, { name: "DSH_MODEL", ready: true }],
     status: "环境检查通过", verified: "macOS + Docker 29.8.2 全链路验收（2026-11-02）" },
-  { id: "h_qw", hid: "liteeval.qianwen-research/v1", role: "agent", version: "0.4.2", src: "平台 builtin",
+  { id: "h_qw", hid: "community.responses-research", role: "agent", version: "1.0.0", src: "外部 Harness · 已注册修订",
     protocol: "qianwen.responses/v1", caps: ["web.search", "web.fetch"],
     envRequired: [], envOptional: [], useConnection: true,
     status: "已验证运行", verified: "FAB 公开第 3、4 题 Qwen/GLM 四次研究 + 双 Judge 诊断（2026-11-01）" },
@@ -694,7 +694,7 @@ function viewLogin() {
           <input id="loginKey" placeholder="ltsk_••••••••••••••••" />
         </div>
         <button class="btn ghost" style="width:100%;justify-content:center" onclick="doLogin(true)">以 API Key 进入</button>
-        <p style="margin-top:22px;font-size:12px;color:var(--muted)">首次部署？运行 <span class="mono">python -m liteeval.interfaces.cli.main owner-init</span> 完成 Owner 初始化后再登录。</p>
+        <p style="margin-top:22px;font-size:12px;color:var(--muted)"><a href="/resources.html">登录本机 Owner 并管理模型连接</a></p>
       </div>
     </div>
   </div>`;
@@ -861,13 +861,11 @@ function viewBenchmarks() {
       <div class="panel-head"><h3>导入来源</h3>${cap("cli")}<span class="micro-label">本地包已实现 · GitHub 固定 commit 手动 checkout 后导入 · 上传归档与网页校验预览待实现</span></div>
       <div class="panel-body">
         <div class="two-col">
-          <div class="field"><label>来源（本地目录路径 / Git 仓库 + 已解析 commit）</label><input id="impSrc" value="benchmarks/agent_sandbox" /></div>
+          <div class="field"><label>来源（本地目录路径 / Git 仓库 + 已解析 commit）</label><input id="impSrc" value="examples/native_benchmark/benchmark" /></div>
           <div class="field"><label>版本号（同版本内容不同将给出冲突）</label><input id="impVer" value="1.0.1" /></div>
         </div>
-        <div class="note warn"><span class="led off" style="margin-top:4px;background:var(--warn)"></span>
-          <span>校验示例（真实结果）：<span class="mono">benchmark validate benchmarks/agent_sandbox</span> 返回 <b>Empty or missing initial_workspace</b> —— parse-001 题面要求 <span class="mono">logs/app.log</span>，但该输入文件被全局 <span class="mono">*.log</span> 规则忽略，未进入 Git 树。修复后重新校验再发布。</span></div>
-        <div class="cli-block">python -m liteeval.interfaces.cli.main benchmark validate benchmarks/agent_sandbox
-python -m liteeval.interfaces.cli.main benchmark import   benchmarks/agent_sandbox
+        <div class="cli-block">python -m liteeval.interfaces.cli.main benchmark validate examples/native_benchmark/benchmark
+python -m liteeval.interfaces.cli.main benchmark import examples/native_benchmark/benchmark --project PROJECT_ID
 <span class="cmt"># GitHub 来源：先手动 checkout 固定 commit，再按本地目录导入；通用拉取待实现</span></div>
       </div>
     </div>
@@ -1361,7 +1359,7 @@ function viewConfig() {
     const mine = connections.filter(c => c.project === state.projectId);
     body = `
     <div class="panel">
-      <div class="panel-head"><h3>Model Connections</h3>${cap("http")}<span class="micro-label">/v1/model-connections · 密钥加密保存 · 只显示是否配置与凭据版本</span>${demoTag()}
+      <div class="panel-head"><h3>Model Connections</h3>${cap("http")}<a href="/resources.html">管理本机模型连接</a>${demoTag()}
         <div class="spacer"></div><button class="btn primary sm" onclick="openAddConn()">＋ 新建连接</button></div>
       <table class="grid">
         <thead><tr><th>连接名</th><th>类型</th><th>API 地址 / 模型 ID</th><th>供应商 API Key</th><th>操作</th></tr></thead>

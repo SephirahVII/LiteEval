@@ -1,4 +1,0 @@
-Research the question below using primary company disclosures and filings. Preserve the dates, financial conventions and numeric tolerances in the question. If a date is ambiguous, state the interpretation; do not silently substitute the latest fiscal year. Use code or a calculator for arithmetic. Cite source URLs and reporting dates. Write the complete answer to response.md in your workspace. Optionally save source URLs in sources.json and calculations in calculations.json. Do not inspect benchmark answers, private grading files, other workspaces or the parent repository. Do not search the entire benchmark question verbatim. State unavailable evidence instead of inventing it.
-
-QUESTION:
-For NASDAQ: CRWD and NASDAQ: PANW,  which company achieved the higher 2-year revenue CAGR, and by how many basis points from FY 2023 to FY 2025?

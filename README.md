@@ -1,6 +1,6 @@
 # LiteEval
 
-LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.2**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography。另附尚未接通后端的 [控制台交互原型](console/README.md)。首次运行先执行 `python -m pip install -e .`。
+LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.2**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography。另附 [控制台](console/README.md)。首次运行先执行 `python -m pip install -e .`。
 
 控制台的用户入口、中英文术语和后端对接范围见 [当前产品需求](docs/product/liteeval-prd-v1.1.md)。
 
@@ -18,23 +18,23 @@ LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.2**，
 python -m examples.native_benchmark
 ```
 
-这会运行两道离线计算题，产生实际子进程日志、JSON/Markdown/二进制产物、评分、重评记录与 ZIP。它是确定性程序的执行验收，模型调用数为 0，不是 LLM 或官方 FAB 成绩。配置和真实能力边界见 [目录 Benchmark 操作指南](docs/benchmark-packages.md)，新架构见 [架构说明](docs/architecture.md)。
+这会运行两道离线计算题，产生实际子进程日志、JSON/Markdown/二进制产物、评分、重评记录与 ZIP。它是确定性程序的执行验收，模型调用数为 0，用于验证平台链路。配置和真实能力边界见 [目录 Benchmark 操作指南](docs/benchmark-packages.md)，新架构见 [架构说明](docs/architecture.md)。
 
 ## 数据与连接能力
 
-FAB v2 原生目录包包含固定来源的 27 道公开题、239 条逐项 rubric、权重与必过项。`python -m examples.fab_v2 prepare` 准备题库。研究工具与文件提交由可注册的 `harnesses/responses_research/` 管理，通过所选项目连接调用模型。历史 Qwen/GLM 试跑见 [真实试跑报告](docs/fab-qianwen-trial.md)。[当前接入步骤](docs/fab-v2-native.md)
+平台仓库维护评测协议、导入和运行服务、模型连接、控制台及合成验收夹具。用户题库、专用 Harness、转换脚本和历史评测记录独立维护。当前迁移位置及外部包的导入流程见 [Benchmark 交付说明](docs/benchmark-distribution.md)。
 
-FAB 两种接入、历史实现归属及示例入口统一见 [Benchmark 索引](benchmarks/README.md) 和 [示例索引](examples/README.md)。旧 Dataset/Codex FAB 路径已删除。
+本机 Owner 可在模型连接页管理项目、API 地址、模型 ID 和加密凭据，并通过连接 ID 绑定 Native 评测。多轮轨迹也已有独立的真实页面。其余控制台主流程仍使用演示数据。[本机资源启动](docs/connections-and-rollouts.md#本机-owner-资源管理) · [控制台说明](console/README.md)
 
 0.3.0 新增项目级模型连接与 API Key 加密保存，可供 HTTP Agent、直接模型调用和 LLM Judge 使用；新增运行中本地日志的游标查询、Target/Judge/重试用量记录，以及实验或单条 Run 的 JSON/JSONL/CSV/ZIP 导出。数据库升级到 schema 5。完整配置、请求示例、统计口径和边界见 [连接与 Rollout 操作指南](docs/connections-and-rollouts.md)。User Agent 暂不纳入本轮。
 
 | 目标 | 已实现 | 验证情况 |
 | --- | --- | --- |
-| 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环实测；Qianwen 研究 Harness 与两种真实 Judge 已完成公开两题诊断 |
+| 真实项目后端 MVP | 分页筛选、JSON/CSV 批量导入导出、HTTP 请求与响应映射、环境变量认证、规则与 LLM Judge、质量/执行指标、Case Compare | HTTP/API 闭环与本机 Owner 资源管理 |
 | 可恢复评测服务 | Case 并发、Agent/Judge 独立重试、取消、租约心跳、崩溃接管、结果写入隔离、提交幂等、项目密钥、原始响应与工件 | 本地集成测试覆盖并发、重试、取消、恢复和鉴权 |
-| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证、Harness 声明式环境变量透传 | SDK、真实子进程/文件和 Linux CI 实际 Docker 已验证；Codex Adapter 仅替身 CLI 测试；Docker 沙箱已在 macOS 实跑验收（`harnesses/claude_code` 与 `harnesses/dsh` + `benchmarks/agent_sandbox`，headless Claude Code / DeepSeek Harness 容器内执行，API Key 经 Worker 环境注入），真实模型成绩需有效 API Key 后单独验收 |
+| 执行过程与任务结果评测 | 事件 v2、Python SDK、工具参数评分、Codex JSONL Adapter、独立工作目录、Docker 环境接口、文件/测试最终状态验证、Harness 声明式环境变量透传 | SDK、真实子进程和文件已验证，既有 Linux CI 有实际 Docker 验收 |
 
-这是可以接入自己的 HTTP Agent 和目录研究 Harness 的后端 MVP。真实 Qianwen 模型试跑见上述报告，Docker 已通过 Linux CI 的实际容器验收；正式生产部署、更多题目的质量校准与其他框架接入仍需继续完成。
+这是可以接入自己的 HTTP Agent 和目录研究 Harness 的后端 MVP。已执行的领域题库试跑记录随题库归档。
 
 ## 一键体验
 
@@ -49,7 +49,7 @@ Demo 自动启动本地 API 和两个示例 Agent，执行 Trace 转 Case、批�
 
 ## 启动常驻服务
 
-浏览器 Owner 模式可先执行 `python -m liteeval.interfaces.cli.main owner-init` 交互设置密码，再执行下面的 API/Worker 命令。API Key 管理员模式仍按下述环境变量启动。Owner 登录接口与会话用法见 [第一步操作指南](docs/step-1-backend.md)；Web 页面将在下一步实现。
+浏览器 Owner 模式可先执行 `python -m liteeval.interfaces.cli.main owner-init` 交互设置密码，再执行下面的 API/Worker 命令。API Key 管理员模式仍按下述环境变量启动。Owner 登录接口与会话用法见 [第一步操作指南](docs/step-1-backend.md)；模型连接页按 [本机操作](docs/connections-and-rollouts.md#本机-owner-资源管理) 启动。
 
 生成管理员密钥，只在本机保存：
 

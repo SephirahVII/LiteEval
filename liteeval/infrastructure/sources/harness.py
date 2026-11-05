@@ -39,7 +39,7 @@ def load_harness(path, blobs):
     connection = conf['runtime'].get('connection', {})
     fields(connection, ['endpoint', 'model', 'api_key', 'parameters'], 'Harness connection bindings')
     if connection:
-        if role != 'agent' or conf['harness']['protocol'] == 'liteeval.dialogue/v1':
+        if role != 'agent':
             raise ValueError('Connection bindings require a command Agent Harness')
         names = list(connection.values())
         if not all(isinstance(n, str) and re.fullmatch(r'[A-Z_][A-Z0-9_]{0,63}', n) for n in names) or len(set(names)) != len(names):

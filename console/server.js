@@ -29,10 +29,6 @@ const MIME = {
 function createServer(directory = root, apiPort = 8765) {
   directory = path.resolve(directory);
   return http.createServer((req, res) => {
-    if (!['GET', 'HEAD'].includes(req.method)) {
-      res.writeHead(405, { Allow: 'GET, HEAD' });
-      return res.end('Method Not Allowed');
-    }
     let urlPath;
     try {
       urlPath = decodeURIComponent(req.url.split('?')[0]);
@@ -41,16 +37,24 @@ function createServer(directory = root, apiPort = 8765) {
       res.writeHead(400);
       return res.end('Bad Request');
     }
-    if (/^\/v1\/benchmark-executions\/[0-9a-f]{32}\/events$/.test(urlPath)) {
+    const readApi = req.method === 'GET' && (
+      ['/v1/auth/me', '/v1/projects', '/v1/model-connections'].includes(urlPath) ||
+      /^\/v1\/benchmark-executions\/[0-9a-f]{32}\/events$/.test(urlPath));
+    const writeApi = (req.method === 'POST' && ['/v1/auth/session', '/v1/projects', '/v1/model-connections'].includes(urlPath)) ||
+      (req.method === 'DELETE' && urlPath === '/v1/auth/session') ||
+      (req.method === 'PATCH' && /^\/v1\/model-connections\/[0-9a-f]{32}$/.test(urlPath));
+    if (readApi || writeApi) {
       const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
       const headers = {};
-      for (const name of ['authorization', 'cookie']) {
+      for (const name of ['authorization', 'cookie', 'origin', 'x-csrf-token', 'content-type', 'content-length']) {
         if (req.headers[name]) headers[name] = req.headers[name];
       }
       const upstream = http.request({ hostname: '127.0.0.1', port: apiPort, path: urlPath + query,
         method: req.method, headers, timeout: 10000 }, response => {
-        res.writeHead(response.statusCode, { 'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        const responseHeaders = { 'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+        if (response.headers['set-cookie']) responseHeaders['Set-Cookie'] = response.headers['set-cookie'];
+        res.writeHead(response.statusCode, responseHeaders);
         response.on('error', () => res.destroy());
         response.pipe(res);
       });
@@ -61,8 +65,12 @@ function createServer(directory = root, apiPort = 8765) {
         res.end(JSON.stringify({ error: 'backend_unavailable' }));
       });
       res.on('close', () => upstream.destroy());
-      upstream.end();
+      req.pipe(upstream);
       return;
+    }
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      res.writeHead(405, { Allow: 'GET, HEAD' });
+      return res.end('Method Not Allowed');
     }
     if (urlPath === "/") urlPath = "/index.html";
     const file = path.resolve(directory, '.' + urlPath);

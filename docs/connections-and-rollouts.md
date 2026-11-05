@@ -1,6 +1,30 @@
-# 模型连接与 Rollout 操作指南（0.3.0）
+# 模型连接与 Rollout 操作指南
 
-本轮完成用户 API Key / model endpoint 保存、执行接入、Rollout 统计与导出。当前身份体系仍是单 Owner + 项目访问 Token；连接归属于 Project，不扩展多用户组织成员体系，暂不实现 User Agent。
+当前身份体系为单 Owner 与项目访问 Token。模型连接归属于项目，包含 API 地址、模型 ID 和可选的加密供应商凭据。
+
+## 本机 Owner 资源管理
+
+在平台根目录安装 Python 依赖，并选定已有数据库。默认使用 `data/liteeval.db`；自定义数据库时，在以下所有 Python 命令中以 `--db PATH` 指向同一文件。已有 Owner 可以直接登录。首次使用可交互设置本机密码。
+
+```powershell
+python -m pip install -e .
+python -m liteeval.interfaces.cli.main owner-init --username owner
+```
+
+保存供应商 Key 前，按下节加载已使用的 `LITEEVAL_SECRET_KEY`。新环境生成一次并保存，已有加密连接时继续用原主密钥。以下命令分别在两个终端运行，API 终端加载主密钥。
+
+```powershell
+# API 终端
+$env:LITEEVAL_PUBLIC_ORIGIN = 'http://127.0.0.1:7100'
+python -m liteeval.interfaces.cli.main api
+
+# 控制台终端
+node console/server.js
+```
+
+打开 [本机模型连接](http://127.0.0.1:7100/resources.html)，登录、选择或创建项目，再填写连接。刷新后仍可读取已保存的名称、API 地址、模型 ID 和密钥配置状态。已有连接支持改名、更换或清除 Key、归档与恢复；更换 endpoint 或模型 ID 时创建新连接。备份数据库、工件及主密钥，主密钥独立保存。
+
+Native CLI 执行时使用同一数据库和主密钥，把页面中的连接 ID 传给 `benchmark run` 的 `--target-connection` 或 `--judge-connection`。自建命令 Agent Harness 可在 `[runtime.connection]` 中将 `endpoint`、`model`、`api_key` 映射到它接受的变量名，适用于单轮、流式和多轮 Agent 协议。自建工具由受信任的 Harness 配置和注册。连接页面显示保存状态，实际供应商联通性在运行中验证。
 
 ## 1. 升级和启动
 
@@ -10,7 +34,7 @@
 python -m pip install -e .
 ```
 
-数据库启动时事务迁移到 schema 5，旧数据、环境变量凭据和实验保持兼容。新增三张表：`model_connections`、`usage_records`、`rollout_events`。
+模型连接与用量从 schema 5 起保存，当前数据库启动时迁移到 schema 6。相关表为：`model_connections`、`usage_records`、`rollout_events`。
 
 保存 API Key 前，生成一次加密主密钥。以下命令只创建新文件，已有文件会报错，避免覆盖旧主密钥：
 

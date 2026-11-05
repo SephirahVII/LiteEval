@@ -30,8 +30,6 @@ def main():
     owner=sub.add_parser('owner-init');owner.add_argument('--username',default='owner')
     bench = sub.add_parser('benchmark'); actions = bench.add_subparsers(dest='action', required=True)
     validate = actions.add_parser('validate'); validate.add_argument('path')
-    convert = actions.add_parser('convert-fab'); convert.add_argument('source'); convert.add_argument('destination')
-    convert.add_argument('--rows'); convert.add_argument('--docker-image')
     publish = actions.add_parser('import'); publish.add_argument('path'); publish.add_argument('--project', required=True)
     releases = actions.add_parser('releases'); releases.add_argument('--project', required=True)
     execute = actions.add_parser('run'); execute.add_argument('release_id'); execute.add_argument('--project', required=True)
@@ -44,15 +42,10 @@ def main():
     rejudge.add_argument('--judge-connection')
     harness = sub.add_parser('harness'); harness.add_argument('path'); harness.add_argument('--project', required=True)
     args=parser.parse_args()
-    if args.command == 'benchmark' and args.action in ('validate', 'convert-fab'):
-        if args.action == 'convert-fab':
-            from liteeval.integrations.benchmarks.fab_package import convert_fab
-            rows = [int(n.strip()) for n in args.rows.split(',')] if args.rows else None
-            result = convert_fab(args.source, args.destination, rows, args.docker_image)
-        else:
-            from liteeval.infrastructure.sources.package import DirectoryLoader
-            package = DirectoryLoader().load(args.path)
-            result = {'valid': True, 'id': package.id, 'version': package.version, 'digest': package.digest, 'task_count': len(package.tasks)}
+    if args.command == 'benchmark' and args.action == 'validate':
+        from liteeval.infrastructure.sources.package import DirectoryLoader
+        package = DirectoryLoader().load(args.path)
+        result = {'valid': True, 'id': package.id, 'version': package.version, 'digest': package.digest, 'task_count': len(package.tasks)}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     store=Store(args.db)

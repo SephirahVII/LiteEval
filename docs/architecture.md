@@ -15,8 +15,7 @@ liteeval/
 │   ├── agents/              # HTTP/Codex 接入
 │   ├── models/              # 模型供应商接入
 │   ├── harnesses/           # Agent/Evaluation Harness 与 registry
-│   ├── judges/              # 已有规则/Judge 集成
-│   └── benchmarks/          # FAB 格式转换
+│   └── judges/              # 已有规则/Judge 集成
 ├── infrastructure/
 │   ├── persistence/         # SQLite schema 6、Repository、查询
 │   ├── artifacts/           # 内容寻址 blob
@@ -50,7 +49,7 @@ DirectoryLoader → TaskSpec + 资源清单 → Benchmark Release
 
 目录模式明确分开 ground_truth、rubric、test 和 submission；不会把评分资源传给 Target。初始化支持二进制文件，采集保存实际文件 bytes；工作区删除后仍可重评和导出。Workspace 是可信本地模式，Docker 是独立容器模式，二者不自动降级。
 
-FAB v2 适配已使用同一目录链路，固定 27 道公开题和 239 条原始检查。Domain 中的 rubric 聚合负责判定完整性、severity 与 must-pass，模型不决定计算公式；TaskSpec 能力要求与 Harness 声明进入预检。Qwen/GLM 已对两道公开题真实研究和诊断评分，普通文件 Harness 仍会因缺少研究能力而被阻止。详见 [真实试跑证据](fab-qianwen-trial.md)。
+任务的能力声明在导入时随版本冻结，预检时与选定的 Harness 修订比对。领域题库、专用适配器及外部工具在独立仓库中维护。[Benchmark 交付说明](benchmark-distribution.md)
 
 实际格式、命令、验收方式及未实现项见 [目录 Benchmark 指南](benchmark-packages.md)。离线两题验收是确定性进程执行。本机缺少 Docker；[独立 Linux CI](https://github.com/SephirahVII/LiteEval/actions/runs/41340058156) 已通过实际容器验收。Qianwen 云端计算与该 Docker 验收是两个不同环境。
 

@@ -2,11 +2,18 @@
 
 平台和题包可以保存在不同仓库、不同设备。设计设备维护题目、场景控制器和评分材料，评测设备运行 LiteEval、保存模型连接与凭据，接收指定版本的包并执行。当前通过平台设备的 CLI 完成导入和执行。
 
+## 已迁移内容
+
+本机独立仓库为平台同级的 `D:\Data\Projects\GoldTrace-EvalContent`。它保存 FAB v2、金融压力、Treasury、编码沙箱和多轮示例的题包、专用 Harness 与 Docker 镜像源码、领域脚本、测试和已提交的历史报告。迁移基线为平台的 `58da6fa`，独立仓库保留了该批文件的原始快照。当前可以直接从独立仓库导入。需要分享时，由题库维护者选择独立仓库的访问范围。
+
+平台仓库保留目录协议、运行与评分机制、模型连接、控制台，以及用于回归的合成题包。已导入的 Release、Harness 修订和历史运行由平台运行数据库及工件存储管理。
+
 ## 文件与职责
 
 | 位置 | 内容 |
 | --- | --- |
-| 平台仓库与运行设备 | LiteEval 代码、数据库、凭据、运行环境、事件与产物存储 |
+| 平台源码仓库 | LiteEval 代码、协议、接口、通用基础设施、合成验收夹具 |
+| 平台运行数据 | SQLite、Release 快照、Harness 修订、事件和工件。凭据主密钥由执行环境单独保管 |
 | 独立 Benchmark 仓库 | `dataset.toml`、`tasks/`、初始工作区、私有场景、Judge、可选 `workflow/` |
 | 独立 Harness 包 | `harness.toml` 和适配代码，可随 Bench 一并交付，也可由评测设备维护 |
 
@@ -26,10 +33,10 @@
 
 ```powershell
 $projectId = 'PROJECT_ID'
-python -m liteeval.interfaces.cli.main benchmark validate D:\Benchmarks\financial_stress
-$release = python -m liteeval.interfaces.cli.main benchmark import D:\Benchmarks\financial_stress --project $projectId | ConvertFrom-Json
-$workflow = python -m liteeval.interfaces.cli.main harness D:\Benchmarks\financial_stress\workflow --project $projectId | ConvertFrom-Json
-$agent = python -m liteeval.interfaces.cli.main harness D:\Harnesses\financial_reference --project $projectId | ConvertFrom-Json
+python -m liteeval.interfaces.cli.main benchmark validate D:\Data\Projects\GoldTrace-EvalContent\benchmarks\financial_stress
+$release = python -m liteeval.interfaces.cli.main benchmark import D:\Data\Projects\GoldTrace-EvalContent\benchmarks\financial_stress --project $projectId | ConvertFrom-Json
+$workflow = python -m liteeval.interfaces.cli.main harness D:\Data\Projects\GoldTrace-EvalContent\benchmarks\financial_stress\workflow --project $projectId | ConvertFrom-Json
+$agent = python -m liteeval.interfaces.cli.main harness D:\Data\Projects\GoldTrace-EvalContent\harnesses\financial_reference --project $projectId | ConvertFrom-Json
 python -m liteeval.interfaces.cli.main benchmark run $release.id --project $projectId --agent-harness $agent.harness_revision_id --workflow-harness $workflow.harness_revision_id --workflow-options '{"clock":"replay"}' --trusted-local
 ```
 
@@ -39,4 +46,6 @@ python -m liteeval.interfaces.cli.main benchmark run $release.id --project $proj
 
 2026-11-05 在当前设备模拟两端交付。平台从独立构建的 wheel 加载，金融题包与参考 Harness 经过 ZIP 传输和字节摘要核对，导入和注册后删除接收源目录。平台使用保存的快照完成三道规则任务，3/3 通过并导出 ZIP。该验证覆盖文件位置、平台安装包和题包资源的分离。真实模型跨设备调用及目标设备的 Docker 环境按各自条件验收。
 
-当前缺少通用 Git URL 导入、网页上传发布、Native Web 运行提交和跨设备 Job API。可以先由设计设备提交版本，再在平台设备手动拉取固定 SHA 并调用 CLI。后续可在这条已验证流程外增加导入任务，记录仓库、commit、路径与 digest，再补 Web 触发与后台执行。Git 更新后创建新的 Release，历史运行继续引用原快照。
+当前支持手动交付，通用 Git URL 导入、网页上传发布、Native Web 运行提交和跨设备 Job API 列入后续建设。可以先由设计设备提交版本，再在平台设备手动拉取固定 SHA 并调用 CLI。后续可在这条已验证流程外增加导入任务，记录仓库、commit、路径与 digest，再补 Web 触发与后台执行。Git 更新后创建新的 Release，历史运行继续引用原快照。
+
+题包文件交付可以现在使用。跨设备登录同一个平台并复用资源的验收目标单独列在 [PRD 后续改进](product/liteeval-prd-v1.1.md#6-后续改进--多设备使用)。

@@ -1,14 +1,7 @@
-# Preserve the upstream dataset bytes so SHA-256 verification survives Windows checkout.
-# The upstream CSV includes trailing spaces; retain them for source hash verification.
-benchmarks/fab_v2_direct/public.csv -text -whitespace
 *.py text eol=lf
 *.toml text eol=lf
 *.md text eol=lf
 *.yml text eol=lf
 .gitattributes text eol=lf
 examples/native_benchmark/benchmark/** -text
-benchmarks/fab_v2_public/** -text
-# These files embed the upstream questions verbatim, including original trailing spaces.
-benchmarks/fab_v2_public/**/prompt.md -whitespace
-benchmarks/fab_v2_public/**/question.txt -whitespace
 *.bin -text -diff

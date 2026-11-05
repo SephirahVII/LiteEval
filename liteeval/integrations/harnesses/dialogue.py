@@ -10,7 +10,7 @@ class CommandDialogueHarness:
         runtime.materialize(spec['resources'], '.harness/')
         return runtime.argv(spec['command'], {'harness': '.harness'})
 
-    async def send_turn(self, runtime, command, spec, request, timeout, emit):
+    async def send_turn(self, runtime, command, spec, request, timeout, emit, *, connection_env=None):
         for name, sha in spec['resources'].items():
             if hashlib.sha256(snapshot_bytes(runtime.root, '.harness/' + name, 4_000_000)).hexdigest() != sha:
                 raise ValueError('Harness resource changed between dialogue turns')
@@ -56,7 +56,8 @@ class CommandDialogueHarness:
                     raise ValueError('Unexpected dialogue event or missing session event')
 
         process = await runtime.execute(command, timeout, encoded(request),
-                                        env_names=spec.get('env', []) + spec.get('env_optional', []), on_output=receive)
+                                        env_names=spec.get('env', []) + spec.get('env_optional', []),
+                                        env_values=connection_env, on_output=receive)
         if process['timed_out']:
             raise TimeoutError('Dialogue turn exceeded its deadline')
         if process['exit_code'] != 0:

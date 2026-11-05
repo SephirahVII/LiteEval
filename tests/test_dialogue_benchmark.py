@@ -3,13 +3,12 @@ import json
 import os
 from pathlib import Path
 import shutil
-import subprocess
-import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 import zipfile
 
+from cryptography.fernet import Fernet
 from liteeval.application.benchmark_exports import export_execution
 from liteeval.bootstrap import benchmark_service
 from liteeval.infrastructure.persistence.store import Store
@@ -43,6 +42,11 @@ def emit(kind, **data):
 
 mode = os.getenv('LITEEVAL_TEST_DIALOGUE_MODE')
 emit('session', session_id='different-session' if mode == 'changed' and turn == 2 else session)
+if mode == 'saved_connection':
+    assert os.environ['FIXTURE_MODEL'] == 'fixture-model'
+    assert os.environ['FIXTURE_ENDPOINT'] == 'http://127.0.0.1:9/v1'
+    assert os.environ['FIXTURE_API_KEY'] == 'fixture-saved-secret'
+    emit('assistant', content=os.environ['FIXTURE_API_KEY'])
 emit('assistant', content=f'Fixture reply for turn {turn}')
 if turn == 2 and mode == 'timeout':
     time.sleep(2)
@@ -67,8 +71,9 @@ class DialogueBenchmarkTest(unittest.IsolatedAsyncioTestCase):
         self.project = self.store.create_project('dialogue')['id']
         self.service = benchmark_service(self.store)
         self.package = self.root / 'bench'
-        shutil.copytree(ROOT / 'benchmarks/dialogue_session', self.package)
+        shutil.copytree(ROOT / 'tests/fixtures/dialogue_session', self.package)
         harness = self.root / 'harness'
+        self.harness_path = harness
         harness.mkdir()
         (harness / 'harness.toml').write_text('''schema_version = 1
 [harness]
@@ -178,15 +183,29 @@ env_optional = ["LITEEVAL_TEST_DIALOGUE_MODE"]
         with self.assertRaisesRegex(ValueError, 'Agent workspace'):
             self.service.loader.load(self.package)
 
-    def test_codex_submission_tool_only_writes_declared_bounded_files(self):
-        script = ROOT / 'harnesses/codex_dialogue/submission.py'
-        messages = []
-        for index, (path, content) in enumerate((('result.json', '{}'), ('undeclared.json', '{}'),
-                                                  ('../outside.json', '{}'), ('result.json', 'x' * 11)), 1):
-            messages.append(json.dumps({'jsonrpc': '2.0', 'id': index, 'method': 'tools/call',
-                                        'params': {'name': 'write_submission', 'arguments': {'path': path, 'content': content}}}))
-        process = subprocess.run([sys.executable, '-I', str(script), '{"result.json": 10}'], cwd=self.root,
-                                 input='\n'.join(messages) + '\n', capture_output=True, text=True, check=True, timeout=10)
-        self.assertEqual([json.loads(line)['result']['isError'] for line in process.stdout.splitlines()], [False, True, True, True])
-        self.assertEqual((self.root / 'result.json').read_text(), '{}')
-        self.assertFalse((self.root / 'undeclared.json').exists())
+    async def test_saved_connection_reaches_every_turn_without_exposing_the_key(self):
+        manifest = self.harness_path / 'harness.toml'
+        with manifest.open('a', encoding='utf-8') as stream:
+            stream.write('''
+env = ["FIXTURE_ENDPOINT", "FIXTURE_MODEL", "FIXTURE_API_KEY"]
+[runtime.connection]
+endpoint = "FIXTURE_ENDPOINT"
+model = "FIXTURE_MODEL"
+api_key = "FIXTURE_API_KEY"
+''')
+        spec, sha = load_harness(self.harness_path, self.service.blobs)
+        self.harness = self.service.repository.register(self.project, 'fixture.dialogue', 'agent', sha, spec)
+        principal = {'admin': True}
+        env = {'LITEEVAL_SECRET_KEY': Fernet.generate_key().decode(), 'LITEEVAL_TEST_DIALOGUE_MODE': 'saved_connection'}
+        with patch.dict(os.environ, env):
+            status, connection = dispatch(self.store, 'POST', '/v1/model-connections', {
+                'project_id': self.project, 'name': 'fixture', 'kind': 'openai_compatible',
+                'endpoint': 'http://127.0.0.1:9/v1', 'model': 'fixture-model', 'api_key': 'fixture-saved-secret',
+            }, principal=principal)
+            self.assertEqual(status, 201)
+            result = await self.execute(target_connection=connection['id'])
+        self.assertEqual(result['summary']['pass'], 1)
+        execution = self.service.repository.execution(self.project, result['execution_id'])
+        self.assertNotIn('fixture-saved-secret', json.dumps(execution))
+        redacted = [e for e in execution['events'] if e['kind'] == 'dialogue_assistant' and e['payload']['content'] == '[REDACTED]']
+        self.assertEqual(len(redacted), 3)

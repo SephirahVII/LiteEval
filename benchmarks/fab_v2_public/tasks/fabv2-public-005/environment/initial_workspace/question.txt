@@ -1,1 +1,0 @@
-For NASDAQ:CZR, calculate Adjusted EBITDAR for 2021-2024 by adding Rent Obligations (specifically the GLPI and VICI leases). Then calculate YoY growth rate in EBITDAR as well as the 3-year CAGR from '21A-24A.

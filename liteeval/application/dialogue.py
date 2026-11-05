@@ -30,7 +30,8 @@ async def run_dialogue(agent: DialogueHarness, task, public, context, blobs, emi
         started = time.monotonic()
         turn_event('dialogue_turn_started', {'instruction': instruction, 'instruction_sha256': step['instruction_sha256']})
         try:
-            response = await agent.send_turn(runtime, command, spec, request, step['timeout_seconds'], turn_event)
+            response = await agent.send_turn(runtime, command, spec, request, step['timeout_seconds'], turn_event,
+                                             connection_env=context.get('connection_env'))
             session_id = response['session_id']
             raw_usage = response.get('usage', {})
             normalized = normalize(raw_usage)

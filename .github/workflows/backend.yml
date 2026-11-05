@@ -33,12 +33,8 @@ jobs:
       - run: python -m examples.platform smoke
       - run: python -m examples.platform readiness
       - run: python -m examples.platform catalog
-      - name: Validate direct FAB CSV entry without model calls
-        run: python -m examples.fab_v2 direct
       - name: Execute native directory benchmark with real subprocesses
         run: python -m examples.native_benchmark
-      - name: Validate and publish native FAB public package without model calls
-        run: python -m examples.fab_v2 prepare
 
   docker-acceptance:
     runs-on: ubuntu-latest

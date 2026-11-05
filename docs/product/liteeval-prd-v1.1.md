@@ -1,6 +1,6 @@
 # LiteEval 产品需求文档
 
-文档版本 1.1 ｜ 2026-11-05 ｜ 后端核对基线 `main@90478fa`（软件 0.4.2）
+文档版本 1.1 ｜ 2026-11-06 ｜ 后端基线 `main@58da6fa` 及本机资源与题库分离增量（软件 0.4.2）
 
 LiteEval 面向个人开发者和小型 Agent 开发团队。用户可以导入一套题目，用不同的模型或 Agent Harness 执行，在同一份题目与评分口径下查看产物、证据、得分和用量。本版以目录式 Benchmark 为控制台的主流程。Dataset、Experiment 和 Trace API 继续用于各自的业务数据，接入界面时按资源来源区分。
 
@@ -31,7 +31,7 @@ LiteEval 面向个人开发者和小型 Agent 开发团队。用户可以导入�
 
 - **RC-01 Harness 目录。** 按 Agent Harness、Evaluation Harness 分组，显示内置、公开或自建来源、版本与内容摘要、协议、声明能力、运行环境要求以及必需凭据的配置方式。公开实现先固定源码修订并适配协议，自建实现注册为独立修订。可选状态分别为「已注册」「声明兼容」「环境检查通过」「已验证运行」，验证记录带时间与条件。
 - **RC-02 模型连接。** 创建时填连接名、API 地址、模型 ID、连接类型和供应商 API Key。已保存 Key 只显示是否配置和凭据版本。可更换、清除 Key 或归档连接。更换地址或模型 ID 时创建新连接，历史运行保留原连接绑定。被测与评审角色在新建评测时选择。
-- **RC-03 命令 Harness 凭据。** 内置模型 Harness 与 LLM Judge 可以选择受支持的已保存连接。Claude Code、DeepSeek 等命令 Harness 采用执行进程的声明式环境变量。页面展示必需变量名、可选变量名及就绪状态；变量值留在配置该进程的环境中。当前缺少实测状态时显示「待验证」，主动联通性测试需说明会调用供应商。
+- **RC-03 命令 Harness 凭据。** 内置模型 Harness 与 LLM Judge 可选择已保存连接。自建命令 Agent Harness 可声明 `[runtime.connection]` 映射模型地址、模型 ID 和供应商 Key，覆盖单轮、流式和多轮协议。其他必需或可选变量可由执行进程提供。配置界面仅展示变量名与配置状态。当前缺少实测状态时显示「待验证」，主动联通性测试需说明会调用供应商。
 
 ### EV 新建评测
 
@@ -74,34 +74,32 @@ Web 提交先持久化运行，再交给执行进程处理。排队、取消、�
 
 ## 4 当前后端与入口对照
 
-下表核对目录式 Benchmark（Native）。**HTTP 可接**表示已有接口，页面仍需真实联调。**部分可接**表示现有数据只能支持部分页面。**CLI / 服务**表示可从对应运行入口使用。**待实现**表示目标页面依赖的新能力。控制台当前使用 Mock 数据，登录、端点检查、运行与导出尚未接后端。[控制台原型说明](../../console/README.md)
+下表核对目录式 Benchmark（Native）。**HTTP 可接**表示已有接口，页面仍需真实联调。**部分可接**表示现有数据只能支持部分页面。**CLI / 服务**表示可从对应运行入口使用。**待实现**表示目标页面依赖的新能力。控制台主页面使用演示数据。本机资源页和多轮轨迹页各自接入真实 API。[控制台说明](../../console/README.md)
 
 | 用户入口 | 当前后端支持 | Web 接通所需工作 |
 | --- | --- | --- |
 | 概览、最近运行 | **待实现**。Native 没有运行列表和项目汇总接口。 | 增加项目内运行列表和进度摘要，再据此展示最近运行与待处理事项。 |
 | 评测集版本列表 | **HTTP 可接**。`GET /v1/benchmark-releases` 返回项目内 ID、名称、版本、digest 和创建时间。 | 先可按名称聚合展示版本。题数、来源详情和文件需另取详情数据。 |
 | 版本详情与题目 | **CLI / 服务**。仓储可按 ID 读取发布 manifest，保存题目、资源与摘要。 | 增加版本、题目及公共资源查询，控制评分私有资源的访问。 |
-| 包校验、发布与 GitHub 来源 | **CLI / 服务**。`benchmark validate/import` 支持本地包。可手动 checkout 固定 commit 再导入。FAB 有专用转换命令。 | 增加上传与校验预览、固定 Git 来源导入及来源元数据。通用 GitHub 拉取、版本差异和自动同步待实现。 |
+| 包校验、发布与 GitHub 来源 | **CLI / 服务**。`benchmark validate/import` 支持本地包。可手动 checkout 固定 commit 再导入。领域格式转换随独立题库维护。 | 增加上传与校验预览、固定 Git 来源导入及来源元数据。通用 GitHub 拉取、版本差异和自动同步待实现。 |
 | Agent / Evaluation Harness | **CLI / 服务**。内置 Harness 按 ID 解析，自建或已适配的公开目录用 `harness` 注册并快照。 | 增加 Harness 列表、详情、兼容性与注册接口。页面需要区分声明和实测结果。 |
-| 模型连接与供应商 Key | **HTTP 可接**。`/v1/model-connections` 支持创建、列表、详情、更新名称与密钥、归档和恢复。密钥加密保存，依赖 `LITEEVAL_SECRET_KEY`。 | 对接真实表单。端点健康探测和项目共享密钥库尚无对应 API，当前展示配置状态。 |
-| Claude Code / DeepSeek 凭据与环境 | **CLI / 服务**。Agent Harness 的必需和可选变量经执行环境透传；缺少必需变量时预检拒绝。Docker 预检检查 CLI，daemon、镜像、CLI 和供应商可用性需要执行验证。 | 增加 Native 环境与变量就绪报告。已保存 Model Connection 的 Key 不会注入命令 Harness。 |
+| 模型连接与供应商 Key | **本机页面已接通**。`/v1/model-connections` 支持创建、列表、详情、更新名称与密钥、归档和恢复。密钥加密保存，依赖 `LITEEVAL_SECRET_KEY`。 | 浏览器显示连接 ID 和凭据配置状态，可供 Native CLI 选用。端点探测和可独立复用的凭据库列入后续。 |
+| 命令 Agent Harness 凭据与环境 | **CLI / 服务**。Agent Harness 的必需和可选变量经执行环境透传；缺少必需变量时预检拒绝。Docker 预检检查 CLI，daemon、镜像、CLI 和供应商可用性需要执行验证。 | 增加 Native 环境与变量就绪报告。声明连接映射的 Agent Harness 可通过 Native CLI 使用已保存的 Key。 |
 | 新建、预检与运行 | **CLI / 服务**。`BenchmarkService.preflight()` 在 `benchmark run` 前检查资源、能力、凭据与运行要求；前台逐题跑整个 Release。 | 增加 Web 预检及提交、选题、提交幂等、独立任务队列和运行状态 API。Native 当前没有网页取消、租约接管和独立任务重试。 |
-| 运行详情、日志与轨迹 | **部分可接**。`GET /v1/benchmark-executions/{id}` 需要已知 ID，返回 plan、result 与全部已持久化事件。单题以事件的 `task_id` 归集。 | 可先做按 ID 查询。增量事件、分题查询、阶段进度和大证据按需加载需要新 API。轨迹深度取决于 Harness 上报，命令封装当前主要保留日志、输出和文件。 |
+| 运行详情、日志与轨迹 | **部分可接**。`GET /v1/benchmark-executions/{id}` 需要已知 ID，返回 plan、result 与全部已持久化事件。`/events` 支持游标和 `task_id` 过滤。 | 独立轨迹页可按已知 ID 回放。主控制台详情与大证据按需加载仍需对接。轨迹深度取决于 Harness 上报。 |
 | 产物与评分 | **部分可接**。详情可读已收集文件的元数据、缺失清单、评分检查与理由；文件字节由 BlobStore 保存。 | 评分与产物清单可先展示，Native 文件下载与证据预览需要授权接口。 |
 | Token、缓存、推理与效率 | **部分可接**。执行结果或事件有已采集的模型用量、耗时和阶段记录。命令 Harness 未统一采集供应商用量；重评结果结构与普通运行也有差异。 | 按角色展示已有数据，归一普通运行与重评的摘要，缺失显示未知。账单、全量资源监控与完整轨迹覆盖待独立建设。 |
 | 导出与重新评分 | **CLI / 服务**。`benchmark export` 导出 ZIP；`benchmark rejudge` 对已完成运行复用 Submission，可切换 Judge 连接，并保持评分 Harness 修订。 | 增加 Web 下载与重评触发接口，保留原运行链接并显示被跳过的题目。 |
 | 重新运行与对比 | **部分可用**。可用 CLI 对原 Release 另发一次运行。Native 未提供从历史计划发起重跑或 Compare 的接口。 | 实现计划复制与对比资格检查，基于真实两侧证据出结果。 |
-| 项目、登录及项目 Key | **HTTP 可接**。已有 Project、Owner 会话、项目 Key 签发及撤销；运行状态 API 可查询现有 Worker。 | 接通真实认证。项目 Key 列表和 Native 执行环境的状态展示需要单独补充。 |
+| 项目、登录及项目 Key | **部分页面已接通**。本机资源页支持 Owner 登录、退出及创建和选择项目。项目 Key 签发与撤销已有接口。 | 项目 Key 管理和 Native 环境状态继续单独接入。 |
 | Trace 导入、Dataset 对比 | **既有 Dataset HTTP 可接**。Trace 转 Case、Dataset 版本、Experiment 预检、队列、重试、取消和 Compare 归属既有服务。 | 目录包接入需增加 Trace 到包题目的转换与验证。两条执行路径各自使用实际资源 ID 与评分口径。 |
 
 源码依据见 [HTTP 路由](../../liteeval/interfaces/http/api.py)、[CLI 入口](../../liteeval/interfaces/cli/main.py)、[Native 执行服务](../../liteeval/application/benchmarks.py)、[版本与运行仓储](../../liteeval/infrastructure/persistence/benchmarks.py)、[凭据管理](../../liteeval/application/connections.py)和 [ZIP 导出](../../liteeval/application/benchmark_exports.py)。
 
-### 0.4.2 示例复核
+### 当前验收范围
 
-- **离线与研究链路。** 确定性示例已有执行、产物、离线评分及导出验收，Linux CI 有 Native Docker 记录。FAB v2 已有 Qwen 和 GLM 在两道公开题上的研究试跑与双 Judge 诊断，覆盖范围按原报告标注。[0.4.0 验证](../verification-0.4.0.md) · [FAB 试跑](../fab-qianwen-trial.md)
-- **新编码沙箱示例。** 当前 checkout 运行 `python -m liteeval.interfaces.cli.main benchmark validate benchmarks/agent_sandbox` 返回 `Empty or missing initial_workspace`。`parse-001` 声明初始工作区，题面要求 `logs/app.log`，当前 Git 树缺该输入文件。`git check-ignore` 确认目标路径匹配全局 `*.log` 规则。临时副本移除声明可通过三题结构校验，正式修复应将真实日志输入纳入版本并核对隐藏测试。镜像指向 `localhost:5000` 的 digest，目标执行机需要可获取该镜像及对应供应商 Key。此次复核到包校验阶段，历史 macOS 验收以其原始环境记录为准。[题目配置](../../benchmarks/agent_sandbox/tasks/parse-001/task.toml) · [题面](../../benchmarks/agent_sandbox/tasks/parse-001/prompt.md) · [示例要求](../../benchmarks/agent_sandbox/README.md)
-- **本轮回归。** Windows Python 3.12.4 下运行 `python -m unittest discover -s tests -v`，125 项中 123 项通过，2 项因本地 Docker 与符号链接条件跳过。Harness 环境变量相关的 5 项通过，覆盖声明、缺项预检及本地工作目录子进程透传。本轮未发起供应商请求或 Docker 执行。
-- **接口复核。** 用临时数据库实际运行两道确定性题，均通过。经后端 HTTP 路由分发验证，版本列表与已知运行 ID 的查询返回 `200`，运行详情含两题结果与 14 条事件；版本详情、运行列表、创建运行返回 `404`，其他项目无法读取该运行。
+- 平台以合成目录包、三轮对话和独立 Workflow 验证执行、隔离、评分与导出。Linux CI 使用合成题验证 Docker。领域试跑、题库和报告由独立仓库维护。[Benchmark 交付](../benchmark-distribution.md)
+- 本机资源页以单 Owner 登录、项目内保存与维护、刷新后可读取、密钥加密以及 Native CLI 按连接 ID 绑定为验收范围。[本机操作](../connections-and-rollouts.md#本机-owner-资源管理)
 
 ## 5 交付顺序与验收
 
@@ -111,4 +109,18 @@ Web 提交先持久化运行，再交给执行进程处理。排队、取消、�
 | M2 浏览器评测闭环 | 版本及题目详情、目录包和固定 GitHub commit 导入、Harness 查询与注册、选题、预检、提交与异步运行、进度、下载和重评。 | 从新项目通过浏览器完成导入、发布、真实执行、查看提交与评分、下载 ZIP。验证重复提交、缺凭据、缺镜像、进程异常和重评复用。公开与自建 Harness 各有可复现接入样例。 |
 | M3 回归分析与运营 | 计划重跑、严格比较、Trace 转目录题目、备份恢复。团队权限、人工复核和质量 Gate 按业务验收推进。 | 同题同评分配置下更换模型或 Harness 可逐题比较；评分标准或题目集合改变时有差异说明。数据库与产物从备份恢复后可校验。 |
 
-首轮主路径验收使用离线确定性包，独立验证文件生成、收集和评分。真实模型、研究工具与 Docker 通过各自的受控运行验收。编码沙箱示例通过干净 checkout 校验、镜像可获取及实际三题执行后，再作为可运行示例展示。正式发布范围以已验收能力为准，User Agent、通用 MCP 管理、定时 Git 同步和共享凭据库留作后续需求。
+首轮主路径验收使用合成确定性包，验证文件生成、收集和评分。真实模型、研究工具与 Docker 各自通过受控运行验收。正式发布范围按已验收能力划定。
+
+## 6 后续改进 · 多设备使用
+
+**排期。** 后续阶段。当前优先验收单 Owner 在主机上的模型连接和凭据管理。独立 Benchmark 可以先从设计设备交付固定版本，再由平台主机通过 CLI 导入。
+
+| 范围 | 后续要求 |
+| --- | --- |
+| 登录与项目 | Owner 可从可信设备登录同一平台。项目及资源保存在主机，其他设备读取同一项目和资源 ID。远程入口需配置加密传输、会话撤销、来源校验与访问记录。 |
+| 连接与凭据 | 项目中维护模型 endpoint、模型 ID 和加密凭据。新增可复用的凭据引用，允许同一 Key 供获准的多个连接选择，支持轮换与撤销。浏览器只读取配置状态和版本。供应商 Key 由执行端按计划及项目权限获取。 |
+| 用户工具 | 单独管理可复用工具配置、能力、协议与版本，可由已授权 Harness 引用。明确允许的主机、权限与凭据范围，并记录运行使用的工具修订。 |
+| 远程评测 | 第二台设备提交引用固定 Benchmark、Harness 修订和连接 ID 的计划，主机排队执行，回传进度、轨迹、评分与导出。固定 Git 来源和 Web 导入按 M2 交付。 |
+| 验收 | 设备 A 保存连接后，设备 B 登录同一平台并选择同一个连接 ID，发起评测无需再次输入供应商 Key。检查执行与导出不回显 Key，撤销会话后设备 B 失去访问，其他项目不能引用该资源。 |
+
+当前本机资源页和 CLI 提供上述工作的资源基础。远程入口、跨设备提交、工具目录及可跨连接复用的凭据库均在后续阶段验收。
