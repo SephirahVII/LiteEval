@@ -1,5 +1,9 @@
 # 目录式 Benchmark：当前操作与能力边界
 
+多轮题包、Codex 会话接续与实时轨迹的操作和实测见 [多轮 Benchmark](dialogue-benchmarks.md)。
+
+在其他设备或独立仓库维护题包，交由平台设备执行的步骤见 [跨设备 Benchmark 交付](benchmark-distribution.md)。
+
 2026-11-02；软件 0.4.1，SQLite schema 6。本文描述实际实现。旧 Python 顶层导入路径已删除；没有旧路径 facade、数据格式自动降级或运行环境回退。后续以本规范及可执行验收为准。
 
 ## 1. 直接运行完整离线闭环
@@ -91,7 +95,7 @@ env = ["ANTHROPIC_API_KEY"]          # 必需：preflight 要求 Worker 环境�
 env_optional = ["ANTHROPIC_BASE_URL"] # 可选：存在才透传
 ```
 
-`[runtime]` 的 `env`/`env_optional` 声明 Harness 需要从 Worker 进程环境透传的变量名（仅大写命名）。`env` 中的变量缺失时 preflight 直接报错并列出名字；`env_optional` 存在才注入。值只从 Worker 环境解析——Docker 模式下经 `docker exec -e NAME` 注入，变量值不出现在宿主 argv，也不会写入包内容、日志或导出。未声明的变量不会进入 Harness 进程（白名单隔离）。
+`[runtime]` 的 `env` 和 `env_optional` 声明允许从 Worker 进程读取的变量名。必填变量缺失时，预检列出变量名。命令 Agent 还可以声明 `[runtime.connection]`，将 `endpoint`、`model`、`api_key` 和可选 `parameters` 映射到进程环境变量。选择 `--target-connection` 后，平台从当前项目的连接解析这些值。计划保存连接 ID、非敏感配置及 Key 版本。Docker 使用 `docker exec -e NAME`，宿主命令行只包含变量名。运行者应将带凭据的 Harness 视为可信代码。
 
 Agent 通过 stdin 接收 JSON：schema_version、task_id、prompt、公开 input_files 和 required_artifacts。其目录只物化公开输入与 Harness 自身资源，不物化 Ground Truth 或 Judge；宿主安全限制仍取决于运行环境。stdout 必须为一个包含 `schema_version=1`、`output` 的 JSON 对象；普通日志写 stderr。产物必须实际写入工作区，平台不从最终文字伪造文件。
 
@@ -104,6 +108,12 @@ Evaluation 包使用 `role="evaluation"` 和 `protocol="liteeval.evaluation/v1"`
 公共 Harness 的接入方法是：检出明确上游 commit，加入/实现上述协议包装层，再注册该目录。当前不会自动克隆任意 Git URL，也不自动执行上游安装脚本。未适配的一体化官方 runner、需要自管 Docker 的框架、远程任务协议必须另建集成器，不能因为注册了目录就宣称已兼容。命令式 Evaluation Harness 当前仅接受离线检查；其 LLM 凭据/工具代理尚未实现。
 
 Harness 修订固定资源 digest；builtin 也记录平台代码树 digest，不仅是版本标签。模型身份分别记录请求模型与供应商返回模型；未返回的信息保持未知。
+
+`liteeval.agent-events/v1` 是带实时事件的命令 Agent 协议。stdout 每行一个带 `schema_version=1` 的 JSON 对象。允许发送 `event`（类型限定为 model_request、provider_event、tool、assistant）、`usage`（原始用量及模型字段）、`exchange`（`.harness-output/` 下的请求响应 JSON 路径），最后以一条 `result` 结束。平台将原始交换脱敏后保存为 blob，工具和用量标注为 Harness 上报。实现见 `harnesses/responses_research/`。
+
+任务通过 `prompt_file` 或 `dialogue_file` 选用平台的单轮或脚本多轮流程。需要独立场景引擎时，可在任务的 `[workflow]` 声明 `id`、私有 `fixture_file` 和由流程负责提交的 `outputs`。控制器以 `role="workflow"`、`protocol="liteeval.workflow/v1"` 单独注册，通过 `--workflow-harness` 选择修订。它在独立工作区读取场景与公开输入，通过 JSONL 请求 Agent 决策，生成其负责的产物。Agent 由平台在自己的工作区运行并返回结果。金融题包含完整实例，见 [金融模拟题](../benchmarks/financial_stress/README.md)。
+
+控制器从 stdin 的第一行读取 `task`、`fixture` 与 `options`。stdout 以 `schema_version=1`、`type` 和 `payload` 发出消息。`agent` 请求会收到一行 Agent 结果，可附 `timeout_seconds` 设置当轮上限。`event` 用于记录公开事件，`result` 标记结束。Controller 产物按任务声明从其工作区采集，平台仅把请求中提供的可见资料传给 Agent。
 
 ## 4. 手动 CLI 流程
 
@@ -120,7 +130,7 @@ liteeval --db data/liteeval.db benchmark export EXECUTION_ID --project PROJECT_I
 
 切换自建 Evaluation Harness：先注册 `examples/native_benchmark/harnesses/evaluation`，再向 run 增加 `--evaluation-harness EVALUATION_REVISION_ID`。两种 Evaluation Harness 都有真实子进程测试，额外验收会使 native test.py 故意崩溃，确认选用外部实现时不会重复执行 native 检查。
 
-模型模式使用 `--agent-harness liteeval.model-json/v1 --target-connection CONNECTION_ID`。需要 LLM Judge 时再绑定 `--judge-connection CONNECTION_ID`。连接必须属于本项目且为 openai_compatible；Key 沿用加密保存和可信调用层解析，不复制进 Agent 文件。Qianwen 研究模式使用 `liteeval.qianwen-research/v1` 和千问平台连接，已完成两题真实试跑，见 [证据及复现方式](fab-qianwen-trial.md)。`benchmark rejudge` 支持显式 `--judge-connection` 切换 Judge，不重复运行 Target。
+内置模型模式使用 `--agent-harness liteeval.model-json/v1 --target-connection CONNECTION_ID`。接入供应商托管研究工具时，先注册 `harnesses/responses_research`，再指定返回的修订 ID 和本项目模型连接。需要 LLM Judge 时绑定 `--judge-connection CONNECTION_ID`。`benchmark rejudge` 支持在已有提交上切换 Judge。历史千问试跑与新入口的对应见 [证据及复现方式](fab-qianwen-trial.md)。
 
 目录执行当前使用 CLI/应用服务入口；不是现有 Dataset Worker 队列的回退路径。读取接口已有 `GET /v1/benchmark-releases` 和 `GET /v1/benchmark-executions/{id}`，遵循项目鉴权。Web 提交、后台队列、远程取消/恢复及多机调度仍需后续实现。
 

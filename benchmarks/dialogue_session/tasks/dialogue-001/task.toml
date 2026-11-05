@@ -1,0 +1,22 @@
+schema_version = 1
+
+[task]
+id = "dialogue-001"
+title = "Retain an identifier and apply a late correction"
+
+[input]
+dialogue_file = "dialogue.toml"
+
+[[artifacts]]
+path = "result.json"
+required = true
+
+[judge]
+ground_truth_file = "judge/ground_truth.json"
+
+[[judge.checks]]
+id = "dialogue-continuity"
+type = "command"
+entrypoint = "judge/test_result.py"
+command = ["{python}", "/judge/test_result.py", "--result", "/judge-output/result.json"]
+must_pass = true

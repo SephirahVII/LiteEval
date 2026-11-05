@@ -6,20 +6,81 @@ import time
 from liteeval.domain.benchmark import finite
 from liteeval.domain.paths import relative_path
 from liteeval.domain.values import encoded
+from liteeval.infrastructure.execution.environments import snapshot_bytes
+import hashlib
 
 
 class CommandAgentHarness:
-    async def run(self, public_task, context):
+    def command(self, context):
         runtime = context['runtime']
-        runtime.materialize(context['spec']['resources'], '.harness/')
-        command = runtime.argv(context['spec']['command'], {'harness': '.harness'})
-        result = await runtime.execute(command, context['timeout'], encoded(public_task),
-                                       env_names=context['spec'].get('env', []) + context['spec'].get('env_optional', []))
+        spec = context['spec']
+        if 'command_argv' not in context:
+            runtime.materialize(spec['resources'], '.harness/')
+            context['command_argv'] = runtime.argv(spec['command'], {'harness': '.harness'})
+        else:
+            for name, sha in spec['resources'].items():
+                if hashlib.sha256(snapshot_bytes(runtime.root, '.harness/' + name, 4_000_000)).hexdigest() != sha:
+                    raise ValueError('Harness resource changed during the task')
+        return context['command_argv']
+
+    async def execute(self, public_task, context, on_output=None):
+        result = await context['runtime'].execute(self.command(context), context['timeout'], encoded(public_task),
+            env_names=context['spec'].get('env', []) + context['spec'].get('env_optional', []),
+            env_values=context.get('connection_env'), on_output=on_output)
         if result['timed_out']: raise TimeoutError('Target deadline exceeded')
         if result['exit_code'] != 0: raise RuntimeError('Target process failed: ' + result['stderr'][-2000:])
-        output = decoded(result['stdout'])
+        return result
+
+    async def run(self, public_task, context):
+        result = await self.execute(public_task, context)
+        return self.validate(decoded(result['stdout']))
+
+    @staticmethod
+    def validate(output):
         if not isinstance(output, dict) or output.get('schema_version') != 1 or 'output' not in output:
             raise ValueError('Agent must return schema_version=1 and output')
+        return output
+
+
+class EventAgentHarness(CommandAgentHarness):
+    """Streaming command transport with bounded evidence references."""
+    async def run(self, public_task, context):
+        output = None
+
+        def receive(stream, text):
+            nonlocal output
+            if stream == 'stderr':
+                context['emit']('log', {'stream': stream, 'text': text})
+                return
+            for line in text.splitlines():
+                if len(line.encode('utf-8')) > 1_000_000 or output is not None:
+                    raise ValueError('Invalid Agent event boundary')
+                event = decoded(line)
+                if not isinstance(event, dict) or event.get('schema_version') != 1:
+                    raise ValueError('Invalid Agent event schema')
+                kind = event.get('type')
+                if kind == 'result':
+                    output = self.validate(event.get('result'))
+                elif kind == 'event' and event.get('kind') in ('model_request', 'provider_event', 'tool', 'assistant'):
+                    if not isinstance(event.get('payload'), dict):
+                        raise ValueError('Agent event requires an object payload')
+                    context['emit'](event['kind'], {**event['payload'], 'source': 'harness_reported'})
+                elif kind == 'usage':
+                    context['observe_usage'](event.get('record'))
+                elif kind == 'exchange':
+                    name = relative_path(event.get('path'))
+                    if not name.startswith('.harness-output/'):
+                        raise ValueError('Agent exchange must be in .harness-output')
+                    body = decoded(snapshot_bytes(context['runtime'].root, name, 64_000_000))
+                    if not isinstance(body, dict) or not isinstance(body.get('request'), dict) or not isinstance(body.get('response'), dict):
+                        raise ValueError('Invalid Agent exchange')
+                    context['observe_exchange'](body['request'], body['response'])
+                else:
+                    raise ValueError('Unknown Agent event')
+
+        await self.execute(public_task, context, receive)
+        if output is None:
+            raise ValueError('Agent did not send a terminal result')
         return output
 
 
@@ -75,6 +136,8 @@ class NativeEvaluationHarness:
         async with context['runtime_factory'](task['environment'], {'execution': context['execution_id']}, context['emit']) as judge_runtime:
             judge_runtime.materialize(task['judge']['resources'])
             judge_runtime.materialize({n: f['sha256'] for n, f in submission.items()}, 'submission/')
+            if context.get('trajectory'):
+                judge_runtime.materialize({'evidence/trajectory.jsonl': context['trajectory']['sha256']})
             for check in task['judge']['checks']:
                 start = time.monotonic()
                 try:
@@ -112,6 +175,8 @@ class CommandEvaluationHarness:
         async with context['runtime_factory'](task['environment'], {'execution': context['execution_id']}, context['emit']) as runtime:
             runtime.materialize(task['judge']['resources'])
             runtime.materialize({n: f['sha256'] for n, f in submission.items()}, 'submission/')
+            if context.get('trajectory'):
+                runtime.materialize({'evidence/trajectory.jsonl': context['trajectory']['sha256']})
             runtime.materialize(self.spec['resources'], '.harness/')
             request = {'schema_version': 1, 'task_id': task['id'], 'prompt': task['prompt'],
                        'checks': task['judge']['checks'], 'ground_truth_file': task['judge']['ground_truth_file'],

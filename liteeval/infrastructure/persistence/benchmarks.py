@@ -60,8 +60,11 @@ class BenchmarkRepository:
             db.execute('UPDATE benchmark_executions SET status=?,result=?,finished_at=? WHERE id=?', (result['status'], encoded(redact(result)), now(), run_id))
 
     def event(self, run_id, kind, payload):
+        payload, created_at = redact(payload), now()
         with self.connect() as db:
-            db.execute('INSERT INTO benchmark_events(execution_id,kind,payload,created_at) VALUES (?,?,?,?)', (run_id, kind, encoded(redact(payload)), now()))
+            cursor = db.execute('INSERT INTO benchmark_events(execution_id,kind,payload,created_at) VALUES (?,?,?,?)',
+                                (run_id, kind, encoded(payload), created_at))
+            return {'id': cursor.lastrowid, 'execution_id': run_id, 'kind': kind, 'payload': payload, 'created_at': created_at}
 
     def execution(self, project_id, id_):
         with self.connect() as db:
@@ -69,3 +72,21 @@ class BenchmarkRepository:
             events = [dict(r) | {'payload': json.loads(r['payload'])} for r in db.execute('SELECT * FROM benchmark_events WHERE execution_id=? ORDER BY id', (id_,))]
         if not row: raise NotFound('Execution not found')
         return dict(row) | {'plan': json.loads(row['plan']), 'result': json.loads(row['result']) if row['result'] else None, 'events': events}
+
+    def event_page(self, project_id, execution_id, after=0, limit=25, task_id=None):
+        if not 0 <= after < 2**63 or not 1 <= limit <= 100:
+            raise ValueError('Invalid event cursor or limit')
+        with self.connect() as db:
+            run = db.execute('SELECT status FROM benchmark_executions WHERE project_id=? AND id=?',
+                             (project_id, execution_id)).fetchone()
+            if not run:
+                raise NotFound('Execution not found')
+            sql = 'SELECT * FROM benchmark_events WHERE execution_id=? AND id>?'
+            params = [execution_id, after]
+            if task_id is not None:
+                sql += " AND json_extract(payload, '$.task_id')=?"
+                params.append(task_id)
+            rows = db.execute(sql + ' ORDER BY id LIMIT ?', (*params, limit + 1)).fetchall()
+        events = [dict(row) | {'payload': json.loads(row['payload'])} for row in rows[:limit]]
+        return {'events': events, 'status': run['status'], 'next_after': events[-1]['id'] if events else after,
+                'has_more': len(rows) > limit}

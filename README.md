@@ -2,6 +2,8 @@
 
 LiteEval 是本地优先的 Agent 回归评测后端。当前版本 **0.4.2**，使用 Python 3.11+、SQLite、本地工件目录，以及用于凭据加密的 cryptography。另附尚未接通后端的 [控制台交互原型](console/README.md)。首次运行先执行 `python -m pip install -e .`。
 
+控制台的用户入口、中英文术语和后端对接范围见 [当前产品需求](docs/product/liteeval-prd-v1.1.md)。
+
 它实现以下闭环：生产 Trace → Case → 数据集不可变快照 → 实验 → Agent 执行与评分 → 指标汇总 → Case 级版本比较。
 
 0.2.1 已补齐第一步的后端准备：浏览器 Owner 会话与 CSRF、轻量实验进度、分页结果、Dataset/Case/Evaluator 归档、Case 编辑冲突检查、独立 Worker 评分预览及 CSV 导出。数据库自动增量迁移至 schema 3；原有 API Key、CLI、SDK 和评测闭环继续支持。完整启动与 PowerShell 操作见 [第一步操作指南](docs/step-1-backend.md)。
@@ -20,7 +22,7 @@ python -m examples.native_benchmark
 
 ## 数据与连接能力
 
-0.4.1 将固定来源的 FAB v2 公开集转换为原生目录包：27 题、239 条逐项 rubric、原始 severity/must-pass、研究能力预检及 Partial Credit/All-Pass。`python -m examples.fab_v2 prepare` 仅准备题库；新增 `liteeval.qianwen-research/v1` 使用明确保存的 API 连接进行云端检索、提取和计算，通过显式提交工具生成真实文件。已用用户配置的千问平台 Key 对公开第 3、4 题完成 Qwen/GLM 共四次研究和双 Judge 诊断，未使用 Codex 登录。结果及解析修复见 [真实试跑报告](docs/fab-qianwen-trial.md)，接入步骤见 [原生 FAB 指南](docs/fab-v2-native.md)。
+FAB v2 原生目录包包含固定来源的 27 道公开题、239 条逐项 rubric、权重与必过项。`python -m examples.fab_v2 prepare` 准备题库。研究工具与文件提交由可注册的 `harnesses/responses_research/` 管理，通过所选项目连接调用模型。历史 Qwen/GLM 试跑见 [真实试跑报告](docs/fab-qianwen-trial.md)。[当前接入步骤](docs/fab-v2-native.md)
 
 FAB 两种接入、历史实现归属及示例入口统一见 [Benchmark 索引](benchmarks/README.md) 和 [示例索引](examples/README.md)。旧 Dataset/Codex FAB 路径已删除。
 

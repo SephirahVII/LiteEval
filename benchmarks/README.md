@@ -1,11 +1,12 @@
 # Benchmark 示例
 
-这里只保留 FAB v2 的两种接入形式，共用固定的 27 道公开题、239 条 rubric 和同一套评分规则。
+FAB v2 的两种接入形式共用固定的 27 道公开题、239 条 rubric 和同一套评分规则。金融压力工作流使用独立的仿真题包。
 
 | 目录 | 用途 | 执行方式 |
 | --- | --- | --- |
 | [fab_v2_direct](fab_v2_direct/README.md) | 原始公开 CSV 直接运行，不使用平台数据库/Release/TaskSpec | `python -m examples.fab_v2 direct`；真实调用需加 `--run` |
 | [fab_v2_public](fab_v2_public/README.md) | 平台 dataset.toml/tasks 包，经发布、预检、Target、采集、独立 Judge 与导出 | `python -m examples.fab_v2 prepare`；真实调用为 `python -m examples.fab_v2 native --run` |
+| [financial_stress](financial_stress/README.md) | 同一 LDI 值班案例的两条冲击分支和平稳对照，含资金账本与定时交收 | `python -m examples.financial_stress` |
 
 已完成的 Qwen/GLM 四次真实研究使用 **fab_v2_public 的第 3、4 题子集**，不是新 direct 入口的实测成绩。报告、产物和完整轨迹见 [试跑证据](../docs/examples/fab-v2/README.md)。两种方式均为适配后的公开题诊断，不是官方六工具/三 Judge 排行榜复现。
 

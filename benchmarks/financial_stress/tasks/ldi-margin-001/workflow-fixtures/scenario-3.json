@@ -1,0 +1,12 @@
+{
+  "forecast_pence": 1000000000,
+  "repo_rejected": false,
+  "margin_calls": [
+    {
+      "id": "M1",
+      "publish_s": 1800,
+      "due_s": 4200,
+      "amount_pence": 1000000000
+    }
+  ]
+}

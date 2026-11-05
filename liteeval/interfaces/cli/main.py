@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import getpass
+import sys
 from pathlib import Path
 from liteeval.interfaces.http.api import serve
 from liteeval.application.dataset_runner import ExperimentRunner
@@ -35,6 +36,8 @@ def main():
     releases = actions.add_parser('releases'); releases.add_argument('--project', required=True)
     execute = actions.add_parser('run'); execute.add_argument('release_id'); execute.add_argument('--project', required=True)
     execute.add_argument('--agent-harness', required=True); execute.add_argument('--evaluation-harness', default='liteeval.native/v1')
+    execute.add_argument('--workflow-harness')
+    execute.add_argument('--workflow-options', type=json.loads)
     execute.add_argument('--target-connection'); execute.add_argument('--judge-connection'); execute.add_argument('--trusted-local', action='store_true')
     export = actions.add_parser('export'); export.add_argument('execution_id'); export.add_argument('--project', required=True); export.add_argument('--output', required=True)
     rejudge = actions.add_parser('rejudge'); rejudge.add_argument('execution_id'); rejudge.add_argument('--project', required=True)
@@ -65,7 +68,9 @@ def main():
         elif args.action == 'releases': result = service.repository.list_releases(args.project)
         elif args.action == 'run':
             result = asyncio.run(service.run(args.project, args.release_id, args.agent_harness, evaluation_ref=args.evaluation_harness,
-                target_connection=args.target_connection, judge_connection=args.judge_connection, trusted_local=args.trusted_local))
+                target_connection=args.target_connection, judge_connection=args.judge_connection, trusted_local=args.trusted_local,
+                workflow_ref=args.workflow_harness, workflow_options=args.workflow_options,
+                on_started=lambda execution_id: print(f'Execution ID: {execution_id}', file=sys.stderr, flush=True)))
         elif args.action == 'rejudge': result = asyncio.run(service.rejudge(args.project, args.execution_id, judge_connection=args.judge_connection))
         else:
             export_execution(service, args.project, args.execution_id, args.output)

@@ -1,0 +1,46 @@
+{
+  "scenario": "repo-normal",
+  "forecast_pence": 3200000000,
+  "repo_rejected": false,
+  "margin_calls": [
+    {
+      "id": "M1",
+      "publish_s": 1800,
+      "due_s": 4200,
+      "amount_pence": 5000000000
+    },
+    {
+      "id": "M2",
+      "publish_s": 3600,
+      "due_s": 7200,
+      "amount_pence": 1400000000
+    }
+  ],
+  "reference_fee_pence": 2170000,
+  "opening_cash_pence": 2000000000,
+  "buffer_pence": 500000000,
+  "funding": {
+    "repo": {
+      "limit_pence": 3960000000,
+      "collateral_pence": 4400000000,
+      "haircut_bps": 1000,
+      "cutoff_s": 2400,
+      "settle_s": 3300,
+      "fee_bps": 5
+    },
+    "line": {
+      "limit_pence": 4000000000,
+      "approval_delay_s": 360,
+      "cutoff_s": 3120,
+      "settle_s": 3720,
+      "fee_bps": 25
+    },
+    "redeem": {
+      "limit_pence": 1800000000,
+      "cutoff_s": 5100,
+      "settle_s": 6300,
+      "fee_bps": 3
+    }
+  },
+  "end_s": 9000
+}

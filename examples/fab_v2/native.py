@@ -14,6 +14,7 @@ from liteeval.application import connections
 from liteeval.application.benchmark_exports import export_execution
 from liteeval.bootstrap import benchmark_service
 from liteeval.infrastructure.persistence.store import Store
+from liteeval.infrastructure.sources.harness import load_harness
 from liteeval.infrastructure.network.http import NoRedirect
 from liteeval.integrations.benchmarks.fab_package import convert_fab
 
@@ -53,6 +54,8 @@ async def main(args):
     convert_fab(ROOT / 'benchmarks/fab_v2_direct', package, [int(n) for n in args.rows.split(',')])
     service = benchmark_service(store)
     release = service.publish(project, package)
+    spec, sha = load_harness(ROOT / 'harnesses/responses_research', service.blobs)
+    harness = service.repository.register(project, spec['definition']['harness']['id'], 'agent', sha, spec)
     state = {'mode': 'real_provider_research', 'authentication': 'user_provided_qianwen_api_key',
              'codex_login_used': False, 'project_id': project, 'release_id': release['id'],
              'release_digest': release['digest'], 'endpoint': args.base_url, 'models': models,
@@ -61,7 +64,7 @@ async def main(args):
 
     async def run_model(model):
         print(json.dumps({'event': 'starting_target', 'model': model}, ensure_ascii=False), flush=True)
-        result = await service.run(project, release['id'], 'liteeval.qianwen-research/v1', target_connection=ids[model],
+        result = await service.run(project, release['id'], harness, target_connection=ids[model],
             judge_connection=ids[models[0]], judge_parameters={'max_tokens': 12000, 'enable_thinking': True}, trusted_local=True)
         label = re.sub(r'[^a-zA-Z0-9._-]', '_', model)
         write_json(root / (label + '-result.json'), result)

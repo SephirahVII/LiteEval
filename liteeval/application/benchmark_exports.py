@@ -23,6 +23,8 @@ def export_execution(service, project_id, execution_id, destination):
         writer.writerow(['task_id', 'execution_status', 'grading_outcome', 'score', 'wall_time_ms'])
         for task in result['tasks']:
             writer.writerow([task['task_id'], task['execution_status'], task['grading']['outcome'], task['grading']['score'], task['wall_time_ms']])
+            if task.get('trajectory'):
+                archive.writestr('trajectories/' + task['task_id'] + '.jsonl', service.blobs.get(task['trajectory']['sha256']))
             for name, meta in task['submission'].items():
                 archive.writestr('submissions/' + task['task_id'] + '/' + name, service.blobs.get(meta['sha256']))
         archive.writestr('summary.csv', report.getvalue().encode('utf-8-sig'))

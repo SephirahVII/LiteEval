@@ -68,13 +68,13 @@ python -m liteeval.interfaces.cli.main benchmark convert-fab benchmarks/fab_v2_d
 provides = ["web.search", "web.fetch"]
 ```
 
-这是声明兼容性，不会自动安装工具或获得联网权限。还需要实测检索/下载、计算、日志和写文件，并准备相应的模型、搜索、SEC/行情等凭据。当前命令 Harness 不自动获得平台保存的 Target API Key；接入使用这些 Key 的公开研究框架，还须实现受控模型/工具调用通道或明确的独立认证集成。不能把 Key 写进包，也不能擅自复用本机 CLI 登录态。
+这是兼容性声明。检索、下载、计算和写文件由实际 Harness 实现。注册的命令 Agent 可以通过 `[runtime.connection]` 将项目连接绑定到进程环境，也可以显式声明从 Worker 环境读取所需变量。
 
-当前已有 `liteeval.qianwen-research/v1`：使用用户显式配置的千问平台 endpoint/model/Key，调用 Responses 的 web_search、web_extractor、code_interpreter，实时保存供应商事件，并执行 submit_answer 写入本地产物。它不使用本机模型 CLI 登录；代码计算发生在供应商云端，本地工作区只用于初始材料与提交采集。普通命令 Harness 的独立认证限制仍然成立。原始官方 runner 尚未原样接入。使用已适配的自建 Harness 时：
+仓库提供可注册的 `harnesses/responses_research/`。它使用所选项目连接，调用支持这些托管工具的 Responses 端点，保存供应商事件，并执行 submit_answer 写入本地产物。调用接口和工具由 Harness 管理。使用这个包时：
 
 ```powershell
-liteeval --db data/fab-v2-native/liteeval.db harness PATH_TO_ADAPTED_RESEARCH_HARNESS --project PROJECT_ID
-liteeval --db data/fab-v2-native/liteeval.db benchmark run RELEASE_ID --project PROJECT_ID --agent-harness RESEARCH_HARNESS_REVISION_ID --judge-connection JUDGE_CONNECTION_ID --trusted-local
+liteeval --db data/fab-v2-native/liteeval.db harness harnesses/responses_research --project PROJECT_ID
+liteeval --db data/fab-v2-native/liteeval.db benchmark run RELEASE_ID --project PROJECT_ID --agent-harness RESEARCH_HARNESS_REVISION_ID --target-connection TARGET_CONNECTION_ID --judge-connection JUDGE_CONNECTION_ID --trusted-local
 ```
 
 以上大写项需替换为实际配置。千问平台试跑使用 `python -m examples.fab_v2 native --run`，配置方式见专用报告；不会默认调用模型。Workspace 仅适用于受信任本地代码；Docker 包运行不使用 --trusted-local。公开/自建 Harness 需要满足协议，不支持时预检拒绝。

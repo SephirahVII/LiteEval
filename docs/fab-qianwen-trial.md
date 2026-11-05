@@ -19,7 +19,7 @@ GLM 首次返回的完整 JSON 被包在 Markdown 代码块中，原解析器将
 
 ## 实际研究与用量
 
-Harness `liteeval.qianwen-research/v1` 调用千问平台 `/responses`，启用 web_search、web_extractor、code_interpreter。模型必须显式调用 submit_answer，本地 Harness 才写 response.md、sources.json；最终聊天文本不会自动充当文件。Target 看不到 Judge 的 rubric。研究计算发生在供应商云端；平台只能记录其返回的输入、输出和状态，无法观测云端完整操作系统、CPU、内存或未返回的内部步骤。
+当时的内置 Harness `liteeval.qianwen-research/v1` 调用千问平台 `/responses`，使用 web_search、web_extractor 和 code_interpreter。显式的 submit_answer 负责写入 response.md、sources.json。研究计算在供应商云端完成，记录范围以供应商返回的事件为准。当前代码将同一接入迁移到了可注册的 `harnesses/responses_research/`，历史试跑使用的是迁移前的修订。[当前运行方式](fab-v2-native.md)
 
 | Target / 题目 | 输入 token | 其中缓存 | 输出 token | 其中 reasoning | 搜索 / 提取 / 代码调用 |
 | --- | ---: | ---: | ---: | ---: | --- |

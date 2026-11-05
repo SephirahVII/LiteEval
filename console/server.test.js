@@ -39,3 +39,28 @@ test('serves files; rejects sibling traversal and malformed URLs without crashin
     await fs.rm(temporary, { recursive: true, force: true });
   }
 });
+
+test('proxies only Native event pages and passes the project credential to the loopback API', async () => {
+  const received = [];
+  const upstream = http.createServer((req, res) => {
+    received.push([req.url, req.headers.authorization]);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end('{"events":[],"next_after":12}');
+  });
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  const consoleServer = createServer(undefined, upstream.address().port);
+  await new Promise(resolve => consoleServer.listen(0, '127.0.0.1', resolve));
+  try {
+    const origin = `http://127.0.0.1:${consoleServer.address().port}`;
+    const route = `/v1/benchmark-executions/${'a'.repeat(32)}/events?after=12`;
+    const response = await fetch(origin + route, { headers: { Authorization: 'Bearer test-project-key' } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal((await response.json()).next_after, 12);
+    assert.equal((await fetch(origin + '/v1/auth/me')).status, 404);
+    assert.deepEqual(received, [[route, 'Bearer test-project-key']]);
+  } finally {
+    await new Promise(resolve => consoleServer.close(resolve));
+    await new Promise(resolve => upstream.close(resolve));
+  }
+});

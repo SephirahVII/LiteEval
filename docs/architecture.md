@@ -46,7 +46,7 @@ DirectoryLoader → TaskSpec + 资源清单 → Benchmark Release
                   检查、聚合、持久化、导出/重评
 ```
 
-Agent Harness 可以是注册的命令实现、内置 JSON action 模型循环，或 Qianwen Responses 研究实现。后者以云端 web_search/web_extractor/code_interpreter 研究，通过显式 submit_answer 在本地写入产物，云端内部只能按供应商返回的事件观测。Evaluation Harness 可以是内置 command/LLM Judge，或协议化的外部离线评分 runner。平台统一拥有工作区、阶段及持久化；外部评分 runner 不再触发 native 检查，不重复计分。角色、配置和资源 digest 固定到运行计划。
+预检选定单轮、脚本多轮或独立注册的控制器流程，并冻结所需修订。题包的金融控制器管理私有场景与结算。Agent Harness 在自己的环境中接收可见信息并返回动作。Responses 研究接入是可注册的命令包，使用通用连接绑定和事件协议。平台统一管理工作区、预算、证据采集和评分阶段。独立评分 runner 负责其声明的检查。[协议与配置](benchmark-packages.md)
 
 目录模式明确分开 ground_truth、rubric、test 和 submission；不会把评分资源传给 Target。初始化支持二进制文件，采集保存实际文件 bytes；工作区删除后仍可重评和导出。Workspace 是可信本地模式，Docker 是独立容器模式，二者不自动降级。
 

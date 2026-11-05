@@ -1,0 +1,16 @@
+schema_version = 1
+[benchmark]
+id = "financial-stress"
+version = "0.2.0"
+name = "Financial stress workflow"
+description = "Synthetic LDI liquidity duty with deterministic settlement"
+[tasks]
+include = ["tasks/*/task*.toml"]
+[defaults]
+environment_profile = "local"
+target_timeout_seconds = 1600
+judge_timeout_seconds = 30
+[environment_profiles.local]
+type = "workspace"
+[harness_requirements]
+target_capabilities = ["agent.action_json"]

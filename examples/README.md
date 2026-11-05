@@ -9,6 +9,7 @@
 | `python -m examples.platform catalog` | 固定版本、预检与 Compare | 否 |
 | `python -m examples.platform load --cases 1000 --concurrency 8` | 本地吞吐验收 | 否 |
 | `python -m examples.native_benchmark` | 两题、命令 Agent、自建评分 Harness、实际文件 | 否 |
+| `python -m examples.financial_stress` | LDI 值班的三情景规则回放、独立评分与导出 | 默认否，模型模式需显式连接 |
 | `python -m examples.fab_v2 prepare` | 发布原生 FAB 包 | 否 |
 | `python -m examples.fab_v2 direct` | 原始 CSV 直接执行入口 | --run 才调用 |
 | `python -m examples.fab_v2 native --run` | 平台原生 FAB 研究 | 是，需 API Key 与主密钥 |

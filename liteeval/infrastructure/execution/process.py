@@ -17,7 +17,9 @@ async def terminate_tree(proc):
         pass
     await proc.wait()
 
-async def run_process(command,cwd=None,env=None,timeout=60,stdin=None,limit=8_000_000,on_output=None):
+async def run_process(command,cwd=None,env=None,timeout=60,stdin=None,limit=8_000_000,on_output=None,exchange=None):
+    if exchange is not None and stdin is None:
+        raise ValueError('Interactive process requires an initial request')
     creation=asyncio.create_task(asyncio.create_subprocess_exec(*command,cwd=cwd,env=env,
         stdin=asyncio.subprocess.PIPE if stdin is not None else asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,start_new_session=os.name!='nt'))
@@ -40,15 +42,27 @@ async def run_process(command,cwd=None,env=None,timeout=60,stdin=None,limit=8_00
                 boundary=pending.rfind('\n')+1
                 if boundary:
                     on_output('stdout' if index==0 else 'stderr',pending[:boundary]);pending=pending[boundary:]
+            elif exchange is not None and index == 0:
+                pending += decoder.decode(data)
+                while '\n' in pending:
+                    line, pending = pending.split('\n', 1)
+                    response = await exchange(line)
+                    if response is not None:
+                        proc.stdin.write((response + '\n').encode())
+                        await proc.stdin.drain()
         if on_output:
             pending+=decoder.decode(b'',final=True)
             if pending:on_output('stdout' if index==0 else 'stderr',pending)
+        elif exchange is not None and index == 0 and (pending or decoder.decode(b'', final=True)):
+            raise ValueError('Unterminated interactive response')
     async def kill():
         await terminate_tree(proc)
     async def write():
         if stdin is not None:
             try:
-                proc.stdin.write(stdin.encode());await proc.stdin.drain();proc.stdin.close()
+                proc.stdin.write((stdin + '\n' if exchange is not None else stdin).encode())
+                await proc.stdin.drain()
+                if exchange is None: proc.stdin.close()
             except (BrokenPipeError,ConnectionResetError):pass
     tasks=[asyncio.create_task(read(proc.stdout,0)),asyncio.create_task(read(proc.stderr,1)),asyncio.create_task(write()),asyncio.create_task(proc.wait())]
     completion=asyncio.gather(*tasks)

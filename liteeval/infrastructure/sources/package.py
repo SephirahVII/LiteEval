@@ -20,6 +20,8 @@ class DirectoryLoader:
             raise ValueError('Benchmark directory does not exist')
         blobs, files, total = {}, {}, 0
         for p in sorted(root.rglob('*')):
+            if '__pycache__' in p.relative_to(root).parts:
+                continue
             if p.is_symlink():
                 raise ValueError('Symlinks are not supported in benchmark packages')
             if p.is_dir():
@@ -71,7 +73,7 @@ class DirectoryLoader:
         tasks, ids = [], set()
         for name in sorted(selected):
             value = tomllib.loads(read(name).decode('utf-8'))
-            fields(value, ['schema_version', 'task', 'input', 'environment', 'requirements', 'budget', 'artifacts', 'judge'], name)
+            fields(value, ['schema_version', 'task', 'input', 'environment', 'requirements', 'budget', 'artifacts', 'judge', 'workflow'], name)
             if value.get('schema_version') != 1:
                 raise ValueError('Unsupported task schema_version')
             meta = value['task']; fields(meta, ['id', 'title', 'category', 'tags', 'metadata'], 'task')
@@ -86,9 +88,12 @@ class DirectoryLoader:
             def resource(local):
                 return relative_path(folder + '/' + relative_path(local))
 
-            fields(value['input'], ['prompt_file'], 'input')
-            prompt = read(resource(value['input']['prompt_file'])).decode('utf-8')
-            if not prompt.strip():
+            inputs = value['input']
+            fields(inputs, ['prompt_file', 'dialogue_file'], 'input')
+            if len(inputs) != 1:
+                raise ValueError('Specify exactly one prompt_file or dialogue_file')
+            prompt = read(resource(inputs['prompt_file'])).decode('utf-8') if 'prompt_file' in inputs else ''
+            if 'prompt_file' in inputs and not prompt.strip():
                 raise ValueError('Empty prompt')
             env = value.get('environment', {})
             fields(env, ['profile', 'initial_workspace'], 'environment')
@@ -116,11 +121,35 @@ class DirectoryLoader:
                 workspace = {n[len(prefix):]: sha for n, sha in files.items() if n.startswith(prefix)}
                 if not workspace:
                     raise ValueError('Empty or missing initial_workspace')
+                if any(n.split('/', 1)[0] in ('.harness', '.harness-output') for n in workspace):
+                    raise ValueError('Initial workspace contains a reserved Harness path')
                 if any(part == 'judge' for part in Path(env['initial_workspace']).parts):
                     raise ValueError('Judge resources cannot be public workspace')
             budget = {k: defaults.get(k, v) for k, v in [('target_timeout_seconds', 2400), ('judge_timeout_seconds', 180)]}
             fields(value.get('budget', {}), budget, 'budget'); budget.update(value.get('budget', {}))
             for k, v in budget.items(): finite(v, k, .05, 86400)
+            dialogue = []
+            if 'dialogue_file' in inputs:
+                dialogue_path = resource(inputs['dialogue_file'])
+                script = tomllib.loads(read(dialogue_path).decode('utf-8'))
+                fields(script, ['schema_version', 'turns'], 'dialogue')
+                turns = script.get('turns')
+                if script.get('schema_version') != 1 or not isinstance(turns, list) or not 2 <= len(turns) <= 32:
+                    raise ValueError('Dialogue v1 requires between 2 and 32 turns')
+                private_files = {files[dialogue_path]}
+                for turn in turns:
+                    fields(turn, ['instruction_file', 'timeout_seconds'], 'dialogue turn')
+                    path = resource(turn['instruction_file'])
+                    data = read(path)
+                    if not data.decode('utf-8').strip() or len(data) > 64_000:
+                        raise ValueError('Dialogue instruction must be nonempty UTF-8 text within 64 KB')
+                    sha = files[path]
+                    private_files.add(sha)
+                    timeout = turn.get('timeout_seconds', budget['target_timeout_seconds'])
+                    finite(timeout, 'Dialogue turn timeout', .05, budget['target_timeout_seconds'])
+                    dialogue.append({'instruction_sha256': sha, 'timeout_seconds': timeout})
+                if private_files.intersection(workspace.values()):
+                    raise ValueError('Dialogue resources cannot be included in the Agent workspace')
             artifacts = value.get('artifacts', [])
             if not isinstance(artifacts, list) or not artifacts:
                 raise ValueError('Declare at least one submission artifact')
@@ -128,6 +157,8 @@ class DirectoryLoader:
             for item in artifacts:
                 fields(item, ['path', 'required', 'max_bytes'], 'artifact')
                 item['path'] = relative_path(item['path'])
+                if item['path'].split('/', 1)[0] in ('.harness', '.harness-output'):
+                    raise ValueError('Submission cannot target a reserved Harness path')
                 if item['path'] in artifact_paths or type(item.get('required', True)) is not bool:
                     raise ValueError('Invalid artifact rule')
                 artifact_paths.add(item['path']); finite(item.get('max_bytes', 1_000_000), 'artifact size', 1, 16_000_000)
@@ -181,6 +212,29 @@ class DirectoryLoader:
                 raise ValueError('Unsupported aggregation')
             finite(policy.get('pass_threshold', 1), 'pass threshold', 0, 1)
             compiled = {'checks': checks, 'aggregate': policy, 'resources': private, 'ground_truth_file': gt}
-            tasks.append(TaskSpec(task_id, prompt, workspace, dict(environment), budget, artifacts, compiled, meta, capabilities))
-        manifest = {'schema_version': 1, 'source_files': files, 'dataset': conf, 'tasks': [asdict(t) for t in tasks]}
+            workflow = value.get('workflow')
+            if workflow is not None:
+                fields(workflow, ['id', 'fixture_file', 'outputs'], 'Workflow')
+                if dialogue or not isinstance(workflow.get('id'), str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,99}', workflow['id']):
+                    raise ValueError('Workflow requires an ID and a prompt')
+                fixture = resource(workflow['fixture_file'])
+                if not isinstance(decoded(read(fixture)), dict) or files[fixture] in workspace.values():
+                    raise ValueError('Workflow fixture must be a private JSON object')
+                outputs = workflow.get('outputs')
+                if not isinstance(outputs, list) or not outputs:
+                    raise ValueError('Workflow requires declared output paths')
+                outputs = [relative_path(n) for n in outputs]
+                if len(outputs) != len(set(outputs)) or not set(outputs) <= artifact_paths:
+                    raise ValueError('Workflow outputs must be distinct submission artifacts')
+                workflow = {'id': workflow['id'], 'fixture_sha256': files[fixture], 'outputs': outputs}
+            tasks.append(TaskSpec(task_id, prompt, workspace, dict(environment), budget, artifacts, compiled, meta, capabilities, dialogue, workflow))
+        compiled_tasks = []
+        for task in tasks:
+            compiled_task = asdict(task)
+            if not task.dialogue:
+                del compiled_task['dialogue']
+            if task.workflow is None:
+                del compiled_task['workflow']
+            compiled_tasks.append(compiled_task)
+        manifest = {'schema_version': 1, 'source_files': files, 'dataset': conf, 'tasks': compiled_tasks}
         return Package(identity['id'], identity['version'], digest(manifest), manifest, tasks, blobs)

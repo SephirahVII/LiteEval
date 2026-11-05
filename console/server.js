@@ -26,7 +26,7 @@ const MIME = {
   ".ico": "image/x-icon",
 };
 
-function createServer(directory = root) {
+function createServer(directory = root, apiPort = 8765) {
   directory = path.resolve(directory);
   return http.createServer((req, res) => {
     if (!['GET', 'HEAD'].includes(req.method)) {
@@ -40,6 +40,29 @@ function createServer(directory = root) {
     } catch {
       res.writeHead(400);
       return res.end('Bad Request');
+    }
+    if (/^\/v1\/benchmark-executions\/[0-9a-f]{32}\/events$/.test(urlPath)) {
+      const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+      const headers = {};
+      for (const name of ['authorization', 'cookie']) {
+        if (req.headers[name]) headers[name] = req.headers[name];
+      }
+      const upstream = http.request({ hostname: '127.0.0.1', port: apiPort, path: urlPath + query,
+        method: req.method, headers, timeout: 10000 }, response => {
+        res.writeHead(response.statusCode, { 'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        response.on('error', () => res.destroy());
+        response.pipe(res);
+      });
+      upstream.on('timeout', () => upstream.destroy());
+      upstream.on('error', () => {
+        if (res.headersSent) return res.destroy();
+        res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ error: 'backend_unavailable' }));
+      });
+      res.on('close', () => upstream.destroy());
+      upstream.end();
+      return;
     }
     if (urlPath === "/") urlPath = "/index.html";
     const file = path.resolve(directory, '.' + urlPath);
@@ -60,7 +83,9 @@ function createServer(directory = root) {
 }
 
 if (require.main === module) {
-  const server = createServer();
+  const apiPort = Number(arg('--api-port', 8765));
+  if (!Number.isInteger(apiPort) || apiPort < 1 || apiPort > 65535) throw new Error('Invalid --api-port');
+  const server = createServer(root, apiPort);
   server.listen(port, host, () => {
     console.log(`LiteEval console prototype → http://${host}:${server.address().port}/`);
   });

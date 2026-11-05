@@ -49,14 +49,15 @@ class TaskRuntime:
             result.append(item)
         return result
 
-    async def execute(self, command, timeout, stdin=None, env_names=()):
+    async def execute(self, command, timeout, stdin=None, env_names=(), on_output=None, env_values=None, exchange=None):
         allowed = ('PATH', 'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'LANG', 'PYTHONUTF8')
         env = {k: os.environ[k] for k in allowed if k in os.environ}
         # Harness-declared names resolved from the Worker environment; values never
         # cross the package boundary or appear on the host argv for Docker.
         env.update({k: os.environ[k] for k in env_names if k in os.environ})
+        env.update(env_values or {})
         env['PYTHONUTF8'] = '1'
-        return await self.environment.execute(command, timeout=timeout, stdin=stdin, env=env)
+        return await self.environment.execute(command, timeout=timeout, stdin=stdin, env=env, on_output=on_output, exchange=exchange)
 
     def collect(self, rules):
         files, missing = {}, []

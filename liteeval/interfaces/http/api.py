@@ -66,13 +66,17 @@ def dispatch(store,method,path,body=None,principal=None,headers=None):
             if not pid: raise ValueError('project_id required')
             scope(pid)
             return 200, {'items': benchmark_service(store).repository.list_releases(pid)}
-        match = re.fullmatch(r'/v1/benchmark-executions/([0-9a-f]{32})', route)
+        match = re.fullmatch(r'/v1/benchmark-executions/([0-9a-f]{32})(/events)?', route)
         if match and method == 'GET':
             from liteeval.bootstrap import benchmark_service
             pid = query.get('project_id') or principal['project_id']
             if not pid: raise ValueError('project_id required')
             scope(pid)
-            return 200, benchmark_service(store).repository.execution(pid, match[1])
+            repository = benchmark_service(store).repository
+            if match[2]:
+                return 200, repository.event_page(pid, match[1], int(query.get('after', 0)),
+                                                  int(query.get('limit', 25)), query.get('task_id'))
+            return 200, repository.execution(pid, match[1])
         if route=='/v1/model-connections':
             if method=='POST':
                 scope(body['project_id']);return 201,connections.create(store,body)

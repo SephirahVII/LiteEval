@@ -11,7 +11,8 @@ from liteeval.domain.usage import normalize
 from liteeval.domain.values import encoded
 from liteeval.infrastructure.security.secrets import redact, safe_error
 from liteeval.integrations.benchmarks.fab_source import load_source, select_rows, rubric_for, research_prompt
-from liteeval.integrations.harnesses.qianwen_research import QianwenResearchHarness
+from harnesses.responses_research.research import ResponsesResearch
+from harnesses.responses_research.client import ResponsesClient
 from liteeval.integrations.models.openai import OpenAICompatibleProvider
 
 SOURCE = Path(__file__).resolve().parent
@@ -51,7 +52,7 @@ async def run_case(row, number, provenance, target, judges, directory, timeout=7
     result = {'task_id': f'fabv2-public-{number:03d}', 'execution_status': 'started', 'judges': [], 'usage': usage}
     started = time.monotonic(); prompt = research_prompt(row['Question'])
     try:
-        await asyncio.wait_for(QianwenResearchHarness().run({'prompt': prompt}, {
+        await asyncio.wait_for(ResponsesResearch().run({'prompt': prompt}, {
             'runtime': Submission(), 'respond': respond, 'model': target.config['model'], 'emit': emit}), timeout)
         result['execution_status'] = 'succeeded'
         result['target_seconds'] = time.monotonic() - started
@@ -100,7 +101,8 @@ async def main(args):
     report = {**catalog, 'codex_login_used': False, 'model_calls': None, 'results': []}
     for model in models:
         for number in selected:
-            result = await run_case(rows[number-1], number, provenance, provider(model), [provider(m, judge=True) for m in judge_models],
+            target = ResponsesClient(ENDPOINT, model, os.environ['QIANWEN_API_KEY'])
+            result = await run_case(rows[number-1], number, provenance, target, [provider(m, judge=True) for m in judge_models],
                                     output / model.replace('/', '_') / f'fabv2-public-{number:03d}')
             report['results'].append({'target': model, **result}); save(output / 'report.json', report)
     report['model_calls'] = sum(len(r['usage']) for r in report['results'])

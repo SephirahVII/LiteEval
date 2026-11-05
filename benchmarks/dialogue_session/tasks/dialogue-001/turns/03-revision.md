@@ -1,0 +1,1 @@
+Correction: the final amount is 47. Call the LiteEval write_submission tool to write result.json. Its JSON object must have exactly the keys reference, currency, and amount. Carry forward the original reference and currency. Use a number for amount. Then confirm completion.

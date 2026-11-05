@@ -15,6 +15,8 @@ class TaskSpec:
     judge: dict
     metadata: dict = field(default_factory=dict)
     capabilities: list[str] = field(default_factory=list)
+    dialogue: list[dict] = field(default_factory=list)
+    workflow: dict | None = None
 
 
 @dataclass(frozen=True)

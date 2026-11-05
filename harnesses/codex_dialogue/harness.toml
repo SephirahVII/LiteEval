@@ -1,0 +1,12 @@
+schema_version = 1
+
+[harness]
+id = "community.codex-dialogue"
+role = "agent"
+version = "1.0.0"
+protocol = "liteeval.dialogue/v1"
+
+[runtime]
+command = ["{python}", "-I", "-X", "utf8", "{harness}/agent.py"]
+env = ["MINIMAX_API_KEY", "LITEEVAL_CODEX_MODEL", "LITEEVAL_CODEX_BASE_URL"]
+env_optional = ["LITEEVAL_CODEX_EXECUTABLE"]

@@ -1,0 +1,65 @@
+schema_version = 1
+[task]
+id = "ldi-margin-001"
+title = "Treasury liquidity duty"
+category = "financial-stress"
+[input]
+prompt_file = "prompt.md"
+[environment]
+initial_workspace = "environment/initial_workspace"
+[[artifacts]]
+path = "handover.md"
+required = false
+[[artifacts]]
+path = "evidence/financial_stress.json"
+required = true
+max_bytes = 4000000
+[workflow]
+id = "benchmark.financial-stress"
+fixture_file = "workflow-fixtures/scenario-1.json"
+outputs = ["handover.md", "evidence/financial_stress.json"]
+[judge]
+ground_truth_file = "judge/ground_truth_1.json"
+[judge.aggregate]
+method = "weighted_mean"
+pass_threshold = 0.95
+
+[[judge.checks]]
+id = "response"
+type = "command"
+entrypoint = "judge/verify_ledger.py"
+command = ["{python}", "/judge/verify_ledger.py", "--scenario", "/judge/ground_truth_1.json", "--submission", "/submission", "--result", "/judge-output/result.json", "--check", "response"]
+weight = 20
+must_pass = false
+
+[[judge.checks]]
+id = "settlement"
+type = "command"
+entrypoint = "judge/verify_ledger.py"
+command = ["{python}", "/judge/verify_ledger.py", "--scenario", "/judge/ground_truth_1.json", "--submission", "/submission", "--result", "/judge-output/result.json", "--check", "settlement"]
+weight = 30
+must_pass = true
+
+[[judge.checks]]
+id = "adaptation"
+type = "command"
+entrypoint = "judge/verify_ledger.py"
+command = ["{python}", "/judge/verify_ledger.py", "--scenario", "/judge/ground_truth_1.json", "--submission", "/submission", "--result", "/judge-output/result.json", "--check", "adaptation"]
+weight = 25
+must_pass = false
+
+[[judge.checks]]
+id = "buffer_cost"
+type = "command"
+entrypoint = "judge/verify_ledger.py"
+command = ["{python}", "/judge/verify_ledger.py", "--scenario", "/judge/ground_truth_1.json", "--submission", "/submission", "--result", "/judge-output/result.json", "--check", "buffer_cost"]
+weight = 15
+must_pass = false
+
+[[judge.checks]]
+id = "handover"
+type = "command"
+entrypoint = "judge/verify_ledger.py"
+command = ["{python}", "/judge/verify_ledger.py", "--scenario", "/judge/ground_truth_1.json", "--submission", "/submission", "--result", "/judge-output/result.json", "--check", "handover"]
+weight = 10
+must_pass = false

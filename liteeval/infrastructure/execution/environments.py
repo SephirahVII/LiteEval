@@ -62,8 +62,9 @@ class WorkspaceEnvironment:
             return self
         except BaseException:
             await self.destroy();raise
-    async def execute(self,command,timeout=60,stdin=None,env=None):
-        return await run_process(command,cwd=self.path,timeout=timeout,stdin=stdin,env=env,on_output=getattr(self,'on_output',None))
+    async def execute(self,command,timeout=60,stdin=None,env=None,on_output=None,exchange=None):
+        logger = None if exchange is not None else on_output or getattr(self,'on_output',None)
+        return await run_process(command,cwd=self.path,timeout=timeout,stdin=stdin,env=env,on_output=logger,exchange=exchange)
     async def snapshot(self):
         tests=[]
         for item in self.config.get('validation_tests',[]):
@@ -120,7 +121,7 @@ class DockerEnvironment(WorkspaceEnvironment):
             return self
         except BaseException:
             await self.destroy();raise
-    async def execute(self,command,timeout=60,stdin=None,env=None):
+    async def execute(self,command,timeout=60,stdin=None,env=None,on_output=None,exchange=None):
         args=['docker','exec','-i']
         # Env refs resolved by trusted Worker; keys rather than values appear on the host argv.
         process_env=dict(os.environ)
@@ -128,7 +129,8 @@ class DockerEnvironment(WorkspaceEnvironment):
             if name=='PATH':continue
             args+=['-e',name];process_env[name]=value
         args+=[self.container,*command]
-        return await run_process(args,timeout=timeout,stdin=stdin,env=process_env,on_output=getattr(self,'on_output',None))
+        logger = None if exchange is not None else on_output or getattr(self,'on_output',None)
+        return await run_process(args,timeout=timeout,stdin=stdin,env=process_env,on_output=logger,exchange=exchange)
     async def snapshot(self):
         result=await super().snapshot();result['isolation']='docker';return result
     async def destroy(self,handle=None):

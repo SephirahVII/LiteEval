@@ -1,0 +1,14 @@
+schema_version = 1
+
+[benchmark]
+id = "dialogue-session"
+version = "1.0.2"
+name = "Three-turn session continuity"
+
+[defaults]
+environment_profile = "local"
+target_timeout_seconds = 240
+judge_timeout_seconds = 15
+
+[environment_profiles.local]
+type = "workspace"

@@ -1,0 +1,13 @@
+schema_version = 1
+
+[[turns]]
+instruction_file = "turns/01-context.md"
+timeout_seconds = 60
+
+[[turns]]
+instruction_file = "turns/02-request.md"
+timeout_seconds = 60
+
+[[turns]]
+instruction_file = "turns/03-revision.md"
+timeout_seconds = 90
