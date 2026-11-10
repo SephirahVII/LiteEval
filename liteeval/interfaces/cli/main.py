@@ -34,7 +34,7 @@ def main():
     releases = actions.add_parser('releases'); releases.add_argument('--project', required=True)
     execute = actions.add_parser('run'); execute.add_argument('release_id'); execute.add_argument('--project', required=True)
     execute.add_argument('--agent-harness', required=True); execute.add_argument('--evaluation-harness', default='liteeval.native/v1')
-    execute.add_argument('--workflow-harness')
+    execute.add_argument('--workflow-harness', action='append', help='Workflow controller revision; repeat for benchmarks whose tasks use different controllers')
     execute.add_argument('--workflow-options', type=json.loads)
     execute.add_argument('--target-connection'); execute.add_argument('--judge-connection'); execute.add_argument('--trusted-local', action='store_true')
     export = actions.add_parser('export'); export.add_argument('execution_id'); export.add_argument('--project', required=True); export.add_argument('--output', required=True)

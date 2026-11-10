@@ -37,18 +37,27 @@ class BenchmarkService:
         if missing_env:
             raise ValueError('Agent Harness requires Worker environment variables: ' + ', '.join(missing_env))
         workflow = None
+        workflows = {}
+        refs = []
         if workflow_ref:
+            refs = [workflow_ref] if isinstance(workflow_ref, str) else list(workflow_ref)
+        if refs:
             if not any(task.get('workflow') for task in manifest['tasks']):
                 raise ValueError('Release does not declare a Workflow')
-            _, row = self.registry.resolve(project_id, workflow_ref, 'workflow')
-            workflow = {'reference': workflow_ref, 'digest': row['digest'], 'spec': row['spec']}
+            for ref in refs:
+                _, row = self.registry.resolve(project_id, ref, 'workflow')
+                harness_id = row['spec']['definition']['harness']['id']
+                if harness_id in workflows:
+                    raise ValueError('Duplicate Workflow controller: ' + harness_id)
+                workflows[harness_id] = {'reference': ref, 'digest': row['digest'], 'spec': row['spec']}
+            workflow = next(iter(workflows.values()))
         options = {} if workflow_options is None else workflow_options
         if not isinstance(options, dict) or len(encoded(options).encode('utf-8')) > 16_000:
             raise ValueError('Workflow options must be a small JSON object')
-        if options and not workflow:
+        if options and not workflows:
             raise ValueError('Workflow options require a registered Workflow')
         for sha in manifest['source_files'].values(): self.blobs.get(sha)
-        for spec in [agent_spec, eval_row['spec']] + ([workflow['spec']] if workflow else []):
+        for spec in [agent_spec, eval_row['spec']] + [w['spec'] for w in workflows.values()]:
             for sha in spec.get('resources', {}).values(): self.blobs.get(sha)
         provides = set(BASE_CAPABILITIES) | set(agent_spec.get('capabilities', [])) | set(definition.get('capabilities', {}).get('provides', []))
         agent_protocol = definition.get('harness', {}).get('protocol', agent_spec.get('protocol'))
@@ -57,7 +66,7 @@ class BenchmarkService:
             missing = set(task.get('capabilities', [])) - provides
             if missing:
                 raise ValueError(f"Task {task['id']} requires missing Harness capabilities: {', '.join(sorted(missing))}")
-            flows[task['id']] = resolve_flow(task, agent_protocol, workflow)
+            flows[task['id']] = resolve_flow(task, agent_protocol, workflows)
         connections = {}
         if agent_spec.get('uses_model') and not target_connection:
             raise ValueError('Model Harness requires target_connection')
@@ -88,7 +97,7 @@ class BenchmarkService:
                 'agent_harness': {'reference': agent_ref, 'digest': agent_row['digest'], 'spec': agent_row['spec']},
                 'evaluation_harness': {'reference': evaluation_ref, 'digest': eval_row['digest'], 'spec': eval_row['spec']},
                 'connections': connections, 'generation_parameters': parameters, 'trusted_local': trusted_local,
-                'tasks': manifest['tasks'], 'flows': flows, 'workflow': workflow, 'workflow_options': options}
+                'tasks': manifest['tasks'], 'flows': flows, 'workflows': workflows, 'workflow_options': options}
         return plan
 
     async def run(self, project_id, release_id, agent_ref, *, on_started=None, **options):
@@ -135,9 +144,10 @@ class BenchmarkService:
         if row['digest'] != plan['agent_harness']['digest'] or eval_row['digest'] != plan['evaluation_harness']['digest']:
             raise ValueError('Harness revision changed after preflight')
         controller = None
-        if plan.get('workflow') and plan['flows'][task['id']] == 'controller':
-            controller, workflow_row = self.registry.resolve(project_id, plan['workflow']['reference'], 'workflow')
-            if workflow_row['digest'] != plan['workflow']['digest']:
+        if plan['flows'][task['id']] == 'controller':
+            entry = plan['workflows'][task['workflow']['id']]
+            controller, workflow_row = self.registry.resolve(project_id, entry['reference'], 'workflow')
+            if workflow_row['digest'] != entry['digest']:
                 raise ValueError('Workflow revision changed after preflight')
         emit('task_started', {})
         phase_start = time.monotonic()

@@ -2,9 +2,9 @@
 from liteeval.application.dialogue import run_dialogue, snapshot_dialogue
 
 
-def resolve_flow(task, agent_protocol, workflow):
+def resolve_flow(task, agent_protocol, workflows):
     if task.get('workflow'):
-        if not workflow or workflow['spec']['definition']['harness']['id'] != task['workflow']['id']:
+        if not workflows or task['workflow']['id'] not in workflows:
             raise ValueError('Task requires its registered Workflow controller')
         if agent_protocol == 'liteeval.dialogue/v1':
             raise ValueError('A command Workflow requires a request/response Agent Harness')
